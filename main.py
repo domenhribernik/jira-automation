@@ -21,11 +21,11 @@ with open("JiraToken.txt", "r") as file:
 
 JIRA_PROJECT_KEY = "SALES"
 TRANSITIONS = {
-    "Lapsed": 2,
-    "New Web Orders": 3,
-    "In Progress": 4,
-    "Outcome": 5,
-    "New lead": 6
+    "lapsed": 2,
+    "new web order": 3,
+    "in progress": 4,
+    "outcome": 5,
+    "new lead": 6
 }
 
 with open('users.json', 'r') as file:
@@ -64,6 +64,14 @@ def read_google_sheet(client, sheet):
     df = pd.DataFrame(data[1:], columns=data[0])
     return df
 
+def clear_google_sheet(client, sheet):
+    sheet = client.open(GOOGLE_SHEET_NAME).worksheet(sheet)
+    all_data = sheet.get_all_values()
+    if len(all_data) > 1:
+        num_columns = len(all_data[0]) 
+        sheet.batch_clear([f"A2:{chr(64+num_columns)}"])
+        print(f"Sheet '{sheet}' cleared except for header.")
+
 def search_issues(status): #TODO Implement pagination for large datasets
     params = {
         "jql": f"project = 'SALES' AND status = '{status}'",
@@ -84,8 +92,7 @@ def search_issues(status): #TODO Implement pagination for large datasets
         print(f"❌ Failed to search issues: {response.text} status: {response.status_code}")
         return []
 
-
-def get_bulk_issues(issues): #! Max 100 issues
+def get_bulk_issues(issues): #TODO if needed find a way to get more than 100 issues (custom paging)
     payload = {
         "fields": [ #? Fields to include in the response
             "summary",
@@ -100,15 +107,16 @@ def get_bulk_issues(issues): #! Max 100 issues
     if response.ok:
         for issue in response.json().get('issues', []):
             issue_key = issue['key']
+            summary = issue['fields'].get('summary')
             customfield_10082 = issue['fields'].get('customfield_10082')
             assignee_account_id = issue['fields'].get('assignee', {}).get('accountId') if issue['fields'].get('assignee') else None
             
-            issues_data[issue_key] = (customfield_10082, assignee_account_id)
+            issues_data[issue_key] = (customfield_10082, assignee_account_id, summary)
     else:
         print(f"❌ Failed to get bulk issues: {response.text} status: {response.status_code}")
     return issues_data
 
-def get_bulk_changelog(issues):
+def get_bulk_changelog(issues): #TODO Implement paging for large datasets
     payload = {
         "issueIdsOrKeys": issues,
         "fieldIds": [
@@ -169,7 +177,8 @@ def create_jira_issues(df, existing_elements, check_date=True):
     
         issue_payload = {
             "fields": {
-                "issuetype": {"id": 10001}, # Lead hardcoded
+                "issuetype": {"id": 10001}, #? Lead hardcoded
+                "assignee": {"id": "70121:bed40c39-1b16-4eff-a88c-809250e73b31"}, #? webadmin hardcoded
                 "project": {"key": JIRA_PROJECT_KEY},
                 "summary": str(customer_name),
                 "customfield_10050": str(last_date), 
@@ -208,33 +217,24 @@ def get_transitions(key):
     else:
         print(f"Failed to get transitions: {response.text}")
 
-def transition_jira_issues(transition, keys):
+def transition_jira_issues(transition, keys): #? Max 1000 transitions
     transition_payload = {
         "bulkTransitionInputs": [
             { 
                 "selectedIssueIdsOrKeys": keys, 
-                "transitionId": transition
+                "transitionId": TRANSITIONS.get(transition.lower(), 0)
             }
         ],
         "sendBulkNotification": False
     }
 
-    for key in keys:
-        response = requests.post(f"{JIRA_URL}/rest/api/3/bulk/issues/transition", json=transition_payload, headers=HEADERS) #! Implement bulk transition
-
-        if response.ok:
-            print(f"✅ Issue {key} moved to 'Lapsed'")
-        else:
-            print(f"❌ Failed to transition issue: {response.text} status: {response.status_code}")
-
-def clear_google_sheet(client, sheet):
-    sheet = client.open(GOOGLE_SHEET_NAME).worksheet(sheet)
-    all_data = sheet.get_all_values()
-    if len(all_data) > 1:
-        num_columns = len(all_data[0]) 
-        sheet.batch_clear([f"A2:{chr(64+num_columns)}"])
-        print(f"Sheet '{sheet}' cleared except for header.")
-
+    response = requests.post(f"{JIRA_URL}/rest/api/3/bulk/issues/transition", json=transition_payload, headers=HEADERS) 
+    if response.ok:
+        for key in keys:
+            print(f"✅ Issue {key} moved to '{transition}'")
+    else:
+        print(f"❌ Failed to transition issue: {response.text} status: {response.status_code}")
+        
 def check_for_new_orders(sheet):
     print("Checking for new orders...")
     client = authenticate_google_sheets()
@@ -242,13 +242,12 @@ def check_for_new_orders(sheet):
 
     if df is not None and not df.empty:
         keys = create_jira_issues(df, [], check_date=False)
-        transition_jira_issues(TRANSITIONS.get("New Web Orders", 0), keys)
+        transition_jira_issues("New Web Order", keys)
         clear_google_sheet(client, sheet)
     else:
         print("No new orders found.")
 
-def send_email(key, message, email_receiver):
-
+def send_email(key, message, email_receiver): #TODO Test sending email through Jira API
     msg = MIMEMultipart()
     msg["From"] = EMAIL_SENDER
     msg["To"] = email_receiver
@@ -264,53 +263,62 @@ def send_email(key, message, email_receiver):
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
 
-def get_last_in_progress_transition(issue_key, transitions):
-    transition = transitions[0]
-    created = transition['date']
-    if transition['field'] == 'status' and transition['to'] == 'In Progress':
-        return created
-
-    return None
-
 def schedule_in_progress_emails(status):
     issues, keys  = search_issues(status)
     message = ""
     email_receiver = ""
     issue_count = len(issues)
     scheduled_emails = []
+    issues_to_update = []
     changelogs = get_bulk_changelog(issues)
     issues_data = get_bulk_issues(issues)
+    today_timestamp = int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
 
     for issue, key in zip(issues, keys):
-        transition = next((log for log in changelogs if log['issueId'] == issue), None)['transitions']
+        transitions = next((log for log in changelogs if log['issueId'] == issue), None)['transitions']
         
-        date = issues_data.get(key, (None, None))[0]
+        date = issues_data.get(key, (None, None, None))[0]
         if date is not None:
             issue_count -= 1
             continue
          
-        time_of_last_change = get_last_in_progress_transition(key, transition)
-        today_timestamp = int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+        time_of_last_change = today_timestamp
+        transition = transitions[0]
+        if transition['field'] == 'status' and transition['to'] == 'In Progress':
+            time_of_last_change = transition['date']
 
-        assignee_id = issues_data.get(key, (None, None))[1]
+        assignee_id = issues_data.get(key, (None, None, None))[1]
         email_receiver = USERS.get(assignee_id) if assignee_id else None
         message = f"This is a reminder to follow up on the issue {key}. Message was scheduled on {datetime.fromtimestamp(math.floor( today_timestamp))} + 3 days \n\nJira Automatic Email"
 
         print(f"Scheduled email for issue {key} to {email_receiver} in {message}")
 
-        payload = {
-            "fields": {
-                "customfield_10082": datetime.fromtimestamp(today_timestamp).strftime("%Y-%m-%d")
-            }
-        }
+        issues_to_update.append(key)
+        scheduled_emails.append((key, message, email_receiver, time_of_last_change))
 
-        label_response = requests.put(f"{JIRA_URL}/rest/api/3/issue/{key}", headers=HEADERS, data=json.dumps(payload))
+    payload = {
+        "editedFieldsInput": {
+            "datePickerFields": [
+                {
+                    "date": {
+                        "formattedDate": datetime.fromtimestamp(today_timestamp).strftime("%Y-%m-%d")
+                    },
+                    "fieldId": "customfield_10082"
+                }
+            ]
+        },
+        "selectedActions": ["customfield_10082"],
+        "selectedIssueIdsOrKeys": issues_to_update,
+        "sendBulkNotification": False
+    }
+    response = requests.post(f"{JIRA_URL}/rest/api/3/bulk/issues/fields", headers=HEADERS, data=json.dumps(payload))
 
-        if label_response.ok:
+    if response.ok:
+        for key in issues_to_update:
             print(f"✅ Labels updated successfully for {key}")
-            scheduled_emails.append((key, message, email_receiver))
-        else:
-            print(f"❌ Failed to update labels: {label_response.status_code}, {label_response.text}")
+        
+    else:
+        print(f"❌ Failed to update labels: {response.status_code}, {response.text}")
 
     print(f"Returned {issue_count} emails to be scheduled.")
     return scheduled_emails
@@ -318,7 +326,7 @@ def schedule_in_progress_emails(status):
 def schedule_emails(status):
     emails_to_send = schedule_in_progress_emails(status)
     delay_seconds = 30
-    for issue_key, message, email_receiver in emails_to_send:
+    for issue_key, message, email_receiver, last_change in emails_to_send:
         run_date = datetime.now() + timedelta(seconds=delay_seconds) # datetime.now() + timedelta(seconds=delay_seconds)
         print(run_date)
         if email_receiver is None:
@@ -334,11 +342,13 @@ def schedule_emails(status):
 
 def import_lapsed_clients(sheet):
     issues, keys = search_issues("Lapsed")
-    lapsed = list(map(lambda issue: issue['fields']['summary'], get_bulk_issues(issues)))
+    issues_data = get_bulk_issues(issues)
+    lapsed = [issues_data.get(key, (None, None, None))[2] for key in keys]
+    print(lapsed)
     
     df = read_google_sheet(authenticate_google_sheets(), sheet)
     keys = create_jira_issues(df, lapsed)
-    transition_jira_issues(TRANSITIONS.get("Lapsed", 0), keys)
+    transition_jira_issues("Lapsed", keys)
 
 def print_task_list():
     jobs = scheduler.get_jobs()
@@ -352,6 +362,8 @@ def print_task_list():
 #TODO Code refactor and cleanup
 #TODO Calculate concurrency for whole project and reduce it 
 def main():
+    schedule_in_progress_emails("In Progress")
+
     #* bulk import lapsed clients
     scheduler.add_job(
         import_lapsed_clients,
@@ -365,31 +377,32 @@ def main():
         check_for_new_orders,
         'interval',
         minutes=15,
-        args=["New Web Orders"]
+        args=["New Web Order"]
     )
 
     #* schedule emails
     scheduler.add_job(
         schedule_emails,
         'interval',
-        seconds=20,
+        days=1,
         args=["In Progress"]
     )
-    while True: # TODO Make a html ui for this
-        user_input = input("Enter a command (Tasks, Delete, Exit): \n").strip().lower()
-        if user_input == "tasks" or user_input == "t":
-            print_task_list()
-        elif user_input == "delete" or user_input == "d":
-            job_id = input("Enter the Job ID to delete: \n").strip()
-            scheduler.remove_job(job_id)
-            print(f"Job {job_id} deleted.")
-        elif user_input == "exit" or user_input == "e":
-            print("Exiting program...")
-            scheduler.shutdown()
-            break
-        else:
-            print("Unknown command. Try 'tasks', 'delete' or 'exit'.") 
-    
 
+    # while True: # TODO Make a django and html ui for this
+    #     user_input = input("Enter a command (Tasks, Delete, Exit): \n").strip().lower()
+    #     if user_input == "tasks" or user_input == "t":
+    #         print_task_list()
+    #     elif user_input == "delete" or user_input == "d":
+    #         print_task_list()
+    #         job_id = input("Enter the Job ID to delete: \n").strip()
+    #         scheduler.remove_job(job_id)
+    #         print(f"Job {job_id} deleted.")
+    #     elif user_input == "exit" or user_input == "e":
+    #         print("Exiting program...")
+    #         scheduler.shutdown()
+    #         break
+    #     else:
+    #         print("Unknown command. Try 'tasks', 'delete' or 'exit'.") 
+    
 if __name__ == "__main__":
     main()

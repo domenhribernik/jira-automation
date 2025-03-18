@@ -32,13 +32,29 @@ This project reads data from Google Sheets or a local CSV file and uploads each 
 
 1. Clone the repository.
 2. Install the required libraries using `pip install -r requirements.txt`.
-3. Configure your Google Sheets and Jira credentials in the script.
+3. Configure your Google Sheets and Jira credentials in the script. And add the following files.
+- GmailToken.txt - Contains the Gmail API token.
+- JiraToken.txt - Contains the Jira API token.
+- credentials.json - Contains the credentials for accessing Google Sheets.
+- users.json - A JSON file with key-value pairs where the key is the user ID and the value is the email. This is necessary because not all Jira users have their emails included.
+
+4. Ensure these files are present and correctly configured before running the script.
+
 
 ## Running the Script
 
 ```bash
 python main.py
 ```
+## User Interface Options
+
+The script provides a simple command-line interface with the following options:
+
+1. **Tasks (t)**: Displays the current list of tasks.
+2. **Delete (d)**: Prompts the user to enter a Job ID to delete a specific task.
+3. **Exit (e)**: Shuts down the scheduler and exits the program.
+
+To use these options, simply type the corresponding command when prompted.
 
 ## License
 
