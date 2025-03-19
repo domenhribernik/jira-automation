@@ -1,1 +1,0 @@
-print(f"✉️  Email scheduled for issue ")
