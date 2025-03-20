@@ -7,7 +7,7 @@ from email.mime.multipart import MIMEMultipart
 # Email Configuration
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-EMAIL_SENDER = "domen.hribernik4@gmail.com"
+EMAIL_SENDER = "webadmin@cwcyprus.com"
 with open("GmailToken.txt", "r") as file:
     EMAIL_PASSWORD = file.read().strip()
 EMAIL_RECEIVER = "domen.hribernik4@gmail.com"

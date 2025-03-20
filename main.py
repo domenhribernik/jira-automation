@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import base64
 from datetime import date, datetime, timedelta
@@ -39,7 +40,7 @@ GOOGLE_SHEET_NAME = "Jira Sales API"
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-EMAIL_SENDER = "domen.hribernik4@gmail.com"
+EMAIL_SENDER = "webadmin@cwcyprus.com"
 with open("GmailToken.txt", "r") as file:
     EMAIL_PASSWORD = file.read().strip()
 
@@ -61,13 +62,16 @@ def setup_logging(log_file: str = "app.log"):
 
     logging.basicConfig(
         level=logging.INFO,  # Log messages of level INFO and above
-        format="%(asctime)s - %(levelname)s - %(message)s",  # Format
+        format="%(asctime)s: %(levelname)s %(message)s",  # Format
         handlers=[
             logging.FileHandler(log_path),
             logging.StreamHandler(),
         ],
     )
+    sys.stdout.reconfigure(encoding='utf-8')
     print(f"Logging setup complete. Logs will be saved to: {log_path}")
+    logging.info("=========================")
+    logging.info("Starting the application...")
 
 def authenticate_google_sheets():
     """Authenticate and return a Google Sheets client."""
@@ -79,7 +83,7 @@ def authenticate_google_sheets():
         client: gspread.Client = gspread.authorize(creds)
         return client
     except Exception as e:
-        logging.error(f"❌ Failed to authenticate Google Sheets: {e}")
+        logging.error(f"Failed to authenticate Google Sheets: {e}")
         raise
 
 def read_google_sheet(client, sheet):
@@ -90,7 +94,7 @@ def read_google_sheet(client, sheet):
         df: pd.DataFrame = pd.DataFrame(data[1:], columns=data[0])
         return df
     except Exception as e:
-        logging.error(f"❌ Failed to read Google Sheet '{sheet}': {e}")
+        logging.error(f"Failed to read Google Sheet '{sheet}': {e}")
         raise
 
 def clear_google_sheet(client, sheet):
@@ -103,7 +107,7 @@ def clear_google_sheet(client, sheet):
             worksheet.batch_clear([f"A2:{chr(64 + num_columns)}{len(all_data)}"])
             logging.info(f"Sheet '{sheet}' cleared except for header.")
     except Exception as e:
-        logging.error(f"❌ Failed to clear Google Sheet '{sheet}': {e}")
+        logging.error(f"Failed to clear Google Sheet '{sheet}': {e}")
         raise
 
 def search_issues(status): #? Max 5000 issues with key and id params, pagination needed for more
@@ -122,11 +126,10 @@ def search_issues(status): #? Max 5000 issues with key and id params, pagination
         issue_ids = [issue["id"] for issue in issues]
         issue_keys = [issue["key"] for issue in issues]
         issue_names = [issue["fields"]["summary"] for issue in issues]
-        
-        logging.info(f"Found {len(issue_ids)} issues")
+
         return issue_ids, issue_keys, issue_names
     else:
-        logging.error(f"❌ Failed to search issues: {response.text} status: {response.status_code}")
+        logging.error(f"Failed to search issues: {response.text} status: {response.status_code}")
         return []
 
 def get_bulk_issues(issues): #TODO if needed find a way to get more than 100 issues (custom paging)
@@ -152,7 +155,7 @@ def get_bulk_issues(issues): #TODO if needed find a way to get more than 100 iss
             
             issues_data[issue_key] = (customfield_10082, assignee_account_id)
     except requests.exceptions.RequestException as e:
-        logging.error(f"❌ Failed to get bulk issues: {response.text} status: {response.status_code} error: {e}")
+        logging.error(f"Failed to get bulk issues: {response.text} status: {response.status_code} error: {e}")
     return issues_data
 
 def get_bulk_changelog(issues): #? Max 1000 transitions per page, for more paging needed
@@ -191,7 +194,7 @@ def get_bulk_changelog(issues): #? Max 1000 transitions per page, for more pagin
                     "transitions": transitions
                 })
     except requests.exceptions.RequestException as e:
-        logging.error(f"❌ Failed to get bulk changelogs: {response.text} status: {response.status_code} error: {e}")
+        logging.error(f"Failed to get bulk changelogs: {response.text} status: {response.status_code} error: {e}")
 
     for issue in filtered_data:
         issue["transitions"].sort(key=lambda x: x["date"], reverse=True)
@@ -243,7 +246,7 @@ def get_bulk_changelog_paging(issues): #? Implemented paging in case of large da
             payload["nextPageToken"] = next_page_token
 
         else:
-            print(f"❌ Failed to get bulk changelogs: {response.text} status: {response.status_code}")
+            print(f"Failed to get bulk changelogs: {response.text} status: {response.status_code}")
             break
     
     # Return sorted transitions by date and merge duplicates
@@ -267,10 +270,12 @@ def create_jira_issues(df, existing_elements, check_date=True):
         days_diff = (date.today() - datetime.strptime(last_date, "%Y-%m-%d").date()).days
         if check_date and days_diff < 90:
             continue
-        logging.info(f"Creating issue for customer: {customer_name}, Days since last transaction: {days_diff}")
 
         company_name = row['Customer Name']
         customer_name = row['Customer Name']
+
+        logging.info(f"Creating issue for customer: {customer_name}, Days since last transaction: {days_diff}")
+
 
         issue_payload = {
             "fields": {
@@ -290,16 +295,15 @@ def create_jira_issues(df, existing_elements, check_date=True):
         bulk_issue_data["issueUpdates"].append(issue_payload)
 
     if bulk_issue_data["issueUpdates"] == []:
-        print("No issues to create.")
         return []
 
     try:
         response = requests.post(f"{JIRA_URL}/rest/api/3/issue/bulk", headers=HEADERS, json=bulk_issue_data)
         keys = [issue["key"] for issue in response.json().get("issues", [])]
-        logging.info(f"✅ Successfully created {len(keys)} issues: {keys}")
+        logging.info(f"Successfully created {len(keys)} issues: {keys}")
         return keys
     except requests.exceptions.RequestException as e:
-        print(f"❌ Failed to create issue: {response.text}")
+        print(f"Failed to create issue: {response.text}")
         return []
 
 def get_transitions(key):
@@ -329,10 +333,9 @@ def transition_jira_issues(transition, keys): #? Max 1000 transitions
 
     try:
         response = requests.post(f"{JIRA_URL}/rest/api/3/bulk/issues/transition", json=transition_payload, headers=HEADERS) 
-        for key in keys:
-            logging.info(f"✅ Issue {key} moved to '{transition}'")
+        logging.info(f"Succesfully moved {len(keys)} issues: {keys} to '{transition}'")  
     except requests.exceptions.RequestException as e:
-        logging.error(f"❌ Failed to transition issue: {response.text} status: {response.status_code} error: {e}")
+        logging.error(f"Failed to transition issue: {response.text} status: {response.status_code} error: {e}")
 
 def send_email(subject, message, email_receiver):
     """Send an email with the given subject and message to the email receiver."""
@@ -347,9 +350,9 @@ def send_email(subject, message, email_receiver):
             server.starttls()  # Secure the connection
             server.login(EMAIL_SENDER, EMAIL_PASSWORD)
             server.sendmail(EMAIL_SENDER, email_receiver, msg.as_string())
-            logging.info("✅ Email sent successfully!")
+            logging.info("Email sent successfully!")
     except Exception as e:
-        logging.error(f"❌ Failed to send email: {e}")
+        logging.error(f"Failed to send email: {e}")
 
 def send_email_jira(key, message): #TODO Jira supports sending emails, can't get it to work for now
     payload = {
@@ -376,58 +379,70 @@ def send_email_jira(key, message): #TODO Jira supports sending emails, can't get
 
     response = requests.post(f"{JIRA_URL}/rest/api/3/issue/{key}/notify", headers=HEADERS, data=json.dumps(payload))
     if response.ok:
-        print("✅ Email sent successfully!")
+        print("Email sent successfully!")
     else:
-        print(f"❌ Failed to send email: {response.text}")
+        print(f"Failed to send email: {response.text}")
 
-def get_email_message(summary, time_of_last_change, send_email_time): #TODO Add link to jira item
-    """Return an email message with the given summary, time of last change, and send email time."""
-    today_timestamp = int(datetime.now().timestamp())
+def get_email_message(summary, issue_key): #TODO Add link to jira item
+    """Generate a Jira-style email notification."""
+    issue_url = f"{JIRA_URL}/jira/core/projects/SALES/board?selectedIssue={issue_key}"
     return f"""
-                <html>
-                <head>
-                    <style>
-                        body {{
-                            font-family: 'Arial', 'Helvetica', sans-serif;
-                            font-size: 1.6rem;
-                            line-height: 1.8;
-                            color: #2c2c2c;
-                            margin: 20px;
-                        }}
-                        .content {{
-                            max-width: 600px;
-                        }}
-                        .highlight {{
-                            color: #b71c1c;
-                            font-weight: bold;
-                        }}
-                        .footer {{
-                            margin-top: 25px;
-                            font-size: 14px;
-                            color: #555;
-                            border-top: 1px solid #ddd;
-                            padding-top: 10px;
-                        }}
-                    </style>
-                </head>
-                <body>
-                    <div class="content">
-                        <p>This is a reminder to follow up on the lead <span class="highlight">{summary}</span>.</p>
-                        <p>The issue was moved to <strong>'In Progress'</strong> on <strong>{datetime.fromtimestamp(time_of_last_change)}</strong>.</p>
-                        <p>The message was scheduled for <strong>{datetime.fromtimestamp(today_timestamp + send_email_time)}</strong>, 
-                        which is in <strong>{send_email_time}</strong> seconds.</p>
-                        <p>Please ensure timely action on this matter.</p>
-                        <div class="footer">
-                            <p>This is an automated message from the Jira Automation System.</p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-            """
+        <html>
+            <head>
+                <style>
+                    body {{
+                        font-family: 'Arial', sans-serif;
+                        font-size: 16px;
+                        line-height: 1.6;
+                        color: #2c2c2c;
+                        margin: 20px;
+                    }}
+                    .content {{
+                        margin: auto;
+                    }}
+                    .issue-title {{
+                        color: #0052CC; /* Jira Blue */
+                        font-size: 20px;
+                        font-weight: bold;
+                        text-decoration: none;
+                    }}
+                    .button {{
+                        display: inline-block;
+                        background-color: #0052CC; /* Jira Blue */
+                        color: #ffffff !important;
+                        text-decoration: none;
+                        font-weight: bold;
+                        padding: 10px 15px;
+                        border-radius: 4px;
+                        margin-top: 10px;
+                    }}
+                    .footer {{
+                        margin-top: 25px;
+                        font-size: 14px;
+                        color: #555;
+                        border-top: 1px solid #ddd;
+                        padding-top: 10px;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="content">
+                    <p><strong>Please follow up on the issue:</strong></p>
+                    <p><a href="{issue_url}" class="issue-title">{summary}</a></p>
+                    <a href="{issue_url}" class="button">View Issue</a>
+                </div>
+                <div class="footer">
+                    <p>This is an automated message from Jira.</p>
+                </div>
+            </body>
+        </html>
+    """
 
 def schedule_emails_list(days_delay, status): #? 4 requests per call
     """"Schedule emails for issues in a specific status."""
     issues, keys, summarys  = search_issues(status)
+    logging.info(f"Found {len(issues)} issues in {status}")
+
     changelogs = get_bulk_changelog(issues)
     issues_data = get_bulk_issues(issues)
     today_timestamp = int(datetime.now().timestamp())
@@ -466,18 +481,18 @@ def schedule_emails_list(days_delay, status): #? 4 requests per call
                 logging.warning(f"No assignee found for issue {key}. Skipping.")
                 continue
 
-            subject = f"JIRA {key} - Follow Up Reminder"
-            message = get_email_message(summary, time_of_last_change, send_email_time)
+            subject = f"JIRA issue {key} needs follow-up"
+            message = get_email_message(summary, key)
 
             issues_to_update.append(key)
             scheduled_emails.append((key, subject, message, email_receiver, send_email_time))
 
         except Exception as e:
-            logging.error(f"❌ Failed processing issue {key}: {e}")
+            logging.error(f"Failed processing issue {key}: {e}")
             continue
 
     if issues_to_update == []:
-        logging.info("No issues to update.")
+        logging.info("No issues need to schedule emails.")
         return []
     
     payload = {
@@ -500,10 +515,10 @@ def schedule_emails_list(days_delay, status): #? 4 requests per call
         response = requests.post(f"{JIRA_URL}/rest/api/3/bulk/issues/fields", headers=HEADERS, data=json.dumps(payload))
 
         for key in issues_to_update:
-            logging.info(f"✅ Labels updated successfully for {key}")
+            logging.info(f"Labels updated successfully for {key}")
         
     except requests.exceptions.RequestException as e:
-        logging.error(f"❌ Failed to update labels: {e}")
+        logging.error(f"Failed to update labels: {e}")
         return []
 
     logging.info(f"Returned {issue_count} emails to be scheduled.")
@@ -511,12 +526,11 @@ def schedule_emails_list(days_delay, status): #? 4 requests per call
 
 def schedule_emails(days_delay, status): #? 4 requests per call
     """Schedule emails for issues in a specific status."""
-    logging.info("=========================")
     logging.info("Scheduling emails...")
     try:
         emails_to_send = schedule_emails_list(days_delay, status)
     except Exception as e:
-        logging.error(f"❌ Failed to retrieve emails to send: {e}")
+        logging.error(f"Failed to retrieve emails to send: {e}")
         return
     delay_seconds = 5
     for issue_key, subject, message, email_receiver, send_email_delay in emails_to_send:
@@ -524,7 +538,7 @@ def schedule_emails(days_delay, status): #? 4 requests per call
             run_date = datetime.now() + timedelta(seconds=delay_seconds)
             logging.info(f"Email will be sent on {run_date}")
             if email_receiver is None:
-                logging.warning(f"❌ Email for issue {issue_key} has no receiver (label was still added).")
+                logging.warning(f"Email for issue {issue_key} has no receiver (label was still added).")
                 continue
             scheduler.add_job(
                 send_email,
@@ -534,12 +548,11 @@ def schedule_emails(days_delay, status): #? 4 requests per call
             )
             print(f"✉️  Email scheduled for issue {issue_key} for {email_receiver} in {delay_seconds} seconds.")
         except Exception as e:
-            logging.error(f"❌ Failed to schedule email for issue {issue_key}: {e}")
+            logging.error(f"Failed to schedule email for issue {issue_key}: {e}")
             continue
 
 def import_lapsed_clients(sheet): #? 3 requests per call (max 100 issues in status)
     """Import lapsed clients from a Google Sheet and transition them to status."""
-    logging.info("=========================")
     logging.info("Importing lapsed clients...")
 
     try:
@@ -549,24 +562,26 @@ def import_lapsed_clients(sheet): #? 3 requests per call (max 100 issues in stat
         df = read_google_sheet(authenticate_google_sheets(), sheet)
         new_keys = create_jira_issues(df, lapsed)
         if new_keys:
-            logging.info(f"Created {len(new_keys)} new issues.")
             transition_jira_issues("Lapsed", new_keys)
         else:
             logging.info("No new issues to create.")
     except Exception as e:
-        logging.error(f"❌ Failed to import lapsed clients: {e}")
+        logging.error(f"Failed to import lapsed clients: {e}")
 
 def check_for_new_orders(sheet):
-    print("Checking for new orders...")
-    client = authenticate_google_sheets()
-    df = read_google_sheet(client, sheet)
+    logging.info("Checking for new orders...")
+    try:
+        client = authenticate_google_sheets()
+        df = read_google_sheet(client, sheet)
 
-    if df is not None and not df.empty:
-        keys = create_jira_issues(df, [], check_date=False)
-        transition_jira_issues("New Web Order", keys)
-        clear_google_sheet(client, sheet)
-    else:
-        print("No new orders found.")
+        if df is not None and not df.empty:
+            keys = create_jira_issues(df, [], check_date=False)
+            transition_jira_issues("New Web Order", keys)
+            clear_google_sheet(client, sheet)
+        else:
+            logging.info("No new orders found.")
+    except Exception as e:
+        logging.error(f"Failed to check for new orders: {e}")
 
 def print_task_list():
     jobs = scheduler.get_jobs()
@@ -583,20 +598,20 @@ def main():
     scheduler.add_job(
         import_lapsed_clients,
         'interval',
-        weeks=1,
+        minutes=1,
         args=["Lapsed"]
     )
     scheduler.add_job(
         check_for_new_orders,
         'interval',
-        minutes=15,
-        args=["New Web Order"]
+        minutes=3,
+        args=["New Web Orders"]
     )
     scheduler.add_job(
         schedule_emails,
         'interval',
-        minutes=15,
-        args=[3, "In Progress"]
+        minutes=2,
+        args=[3, "In Progress"] #? 3 days delay
     )
 
     while True: # TODO Make a django and html ui for this

@@ -1,0 +1,177 @@
+2025-03-20 08:38:14,464 - INFO - Added job "import_lapsed_clients" to job store "default"
+2025-03-20 08:38:14,465 - INFO - Added job "check_for_new_orders" to job store "default"
+2025-03-20 08:38:14,465 - INFO - Added job "schedule_emails" to job store "default"
+2025-03-20 08:39:14,472 - INFO - Running job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 08:39:14 EET)" (scheduled at 2025-03-20 08:39:14.464640+02:00)
+2025-03-20 08:39:14,473 - INFO - =========================
+2025-03-20 08:39:14,473 - INFO - Importing lapsed clients...
+2025-03-20 08:39:14,861 - INFO - Found 0 existing lapsed issues.
+2025-03-20 08:39:18,042 - INFO - Creating issue for customer: CORTANISCO LTD, Days since last transaction: 90
+2025-03-20 08:39:18,043 - INFO - Creating issue for customer: SW10 CONSULTING LTD, Days since last transaction: 94
+2025-03-20 08:39:18,043 - INFO - Creating issue for customer: Bright Era Education Ltd, Days since last transaction: 126
+2025-03-20 08:39:18,043 - INFO - Creating issue for customer: BRITISH HIGH COMMISSION, Days since last transaction: 147
+2025-03-20 08:39:18,044 - INFO - Creating issue for customer: SALAMIS SHIPPING SERVICES LTD, Days since last transaction: 191
+2025-03-20 08:39:18,044 - INFO - Creating issue for customer: INDIAN HIGH COMMISSION, Days since last transaction: 379
+2025-03-20 08:39:18,044 - INFO - Creating issue for customer: JPB ENERGY LTD, Days since last transaction: 489
+2025-03-20 08:39:18,044 - INFO - Creating issue for customer: CYPRUS INTERNATIONAL ROAD LTD, Days since last transaction: 511
+2025-03-20 08:39:21,925 - INFO - Created 8 new issues.
+2025-03-20 08:39:22,544 - INFO - Job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 08:40:14 EET)" executed successfully
+2025-03-20 08:40:14,479 - INFO - Running job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 08:41:14 EET)" (scheduled at 2025-03-20 08:40:14.464640+02:00)
+2025-03-20 08:40:14,479 - INFO - Running job "schedule_emails (trigger: interval[0:02:00], next run at: 2025-03-20 08:42:14 EET)" (scheduled at 2025-03-20 08:40:14.465528+02:00)
+2025-03-20 08:40:14,479 - INFO - =========================
+2025-03-20 08:40:14,480 - INFO - =========================
+2025-03-20 08:40:14,480 - INFO - Importing lapsed clients...
+2025-03-20 08:40:14,480 - INFO - Scheduling emails...
+2025-03-20 08:40:14,895 - INFO - Found 8 existing lapsed issues.
+2025-03-20 08:40:14,935 - INFO - Found 3 issues in In Progress, that have already had scheduled emails.
+2025-03-20 08:40:16,558 - INFO - Returned 1 emails to be scheduled.
+2025-03-20 08:40:16,558 - INFO - Email will be sent on 2025-03-20 08:40:21.558366
+2025-03-20 08:40:16,559 - INFO - Added job "send_email" to job store "default"
+2025-03-20 08:40:16,560 - INFO - Job "schedule_emails (trigger: interval[0:02:00], next run at: 2025-03-20 08:42:14 EET)" executed successfully
+2025-03-20 08:40:18,010 - INFO - No new issues to create.
+2025-03-20 08:40:18,010 - INFO - Job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 08:41:14 EET)" executed successfully
+2025-03-20 08:40:21,559 - INFO - Removed job 32d3c318a84d4e8db4ccb699621ba209
+2025-03-20 08:40:21,559 - INFO - Running job "send_email (trigger: date[2025-03-20 08:40:21 EET], next run at: 2025-03-20 08:40:21 EET)" (scheduled at 2025-03-20 08:40:21.558366+02:00)
+2025-03-20 08:40:25,766 - INFO - Job "send_email (trigger: date[2025-03-20 08:40:21 EET], next run at: 2025-03-20 08:40:21 EET)" executed successfully
+2025-03-20 08:41:14,466 - INFO - Running job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 08:42:14 EET)" (scheduled at 2025-03-20 08:41:14.464640+02:00)
+2025-03-20 08:41:14,466 - INFO - Running job "check_for_new_orders (trigger: interval[0:03:00], next run at: 2025-03-20 08:44:14 EET)" (scheduled at 2025-03-20 08:41:14.465195+02:00)
+2025-03-20 08:41:14,466 - INFO - =========================
+2025-03-20 08:41:14,466 - INFO - =========================
+2025-03-20 08:41:14,466 - INFO - Importing lapsed clients...
+2025-03-20 08:41:14,467 - INFO - Checking for new orders...
+2025-03-20 08:41:14,926 - INFO - Found 8 existing lapsed issues.
+2025-03-20 08:41:17,038 - INFO - Job "check_for_new_orders (trigger: interval[0:03:00], next run at: 2025-03-20 08:44:14 EET)" executed successfully
+2025-03-20 08:41:17,888 - INFO - No new issues to create.
+2025-03-20 08:41:17,888 - INFO - Job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 08:42:14 EET)" executed successfully
+2025-03-20 08:41:32,585 - INFO - Scheduler has been shut down
+2025-03-20 08:43:58,463 - INFO - Added job "import_lapsed_clients" to job store "default"
+2025-03-20 08:43:58,464 - INFO - Added job "check_for_new_orders" to job store "default"
+2025-03-20 08:43:58,464 - INFO - Added job "schedule_emails" to job store "default"
+2025-03-20 08:44:00,352 - INFO - Scheduler has been shut down
+2025-03-20 08:48:57,372: INFO Added job "import_lapsed_clients" to job store "default"
+2025-03-20 08:48:57,372: INFO Added job "check_for_new_orders" to job store "default"
+2025-03-20 08:48:57,372: INFO Added job "schedule_emails" to job store "default"
+2025-03-20 08:49:57,374: INFO Running job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 08:49:57 EET)" (scheduled at 2025-03-20 08:49:57.372230+02:00)
+2025-03-20 08:49:57,374: INFO =========================
+2025-03-20 08:49:57,375: INFO Importing lapsed clients...
+2025-03-20 08:49:57,846: INFO Found 0 existing lapsed issues.
+2025-03-20 08:50:01,164: INFO Creating issue for customer: CORTANISCO LTD, Days since last transaction: 90
+2025-03-20 08:50:01,164: INFO Creating issue for customer: SW10 CONSULTING LTD, Days since last transaction: 94
+2025-03-20 08:50:01,164: INFO Creating issue for customer: Bright Era Education Ltd, Days since last transaction: 126
+2025-03-20 08:50:01,165: INFO Creating issue for customer: BRITISH HIGH COMMISSION, Days since last transaction: 147
+2025-03-20 08:50:01,165: INFO Creating issue for customer: SALAMIS SHIPPING SERVICES LTD, Days since last transaction: 191
+2025-03-20 08:50:01,165: INFO Creating issue for customer: INDIAN HIGH COMMISSION, Days since last transaction: 379
+2025-03-20 08:50:01,165: INFO Creating issue for customer: JPB ENERGY LTD, Days since last transaction: 489
+2025-03-20 08:50:01,165: INFO Creating issue for customer: CYPRUS INTERNATIONAL ROAD LTD, Days since last transaction: 511
+2025-03-20 08:50:04,049: INFO Created 8 new issues.
+2025-03-20 08:50:04,667: INFO Job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 08:50:57 EET)" executed successfully
+2025-03-20 08:50:11,465: INFO Scheduler has been shut down
+2025-03-20 08:56:28,725: INFO =========================
+2025-03-20 08:56:28,725: INFO Starting the application...
+2025-03-20 08:56:28,726: INFO Added job "import_lapsed_clients" to job store "default"
+2025-03-20 08:56:28,726: INFO Added job "check_for_new_orders" to job store "default"
+2025-03-20 08:56:28,727: INFO Added job "schedule_emails" to job store "default"
+2025-03-20 08:57:28,738: INFO Running job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 08:57:28 EET)" (scheduled at 2025-03-20 08:57:28.726379+02:00)
+2025-03-20 08:57:28,738: INFO Importing lapsed clients...
+2025-03-20 08:57:29,141: INFO Found 0 existing lapsed issues.
+2025-03-20 08:57:32,929: INFO Creating issue for customer: CORTANISCO LTD, Days since last transaction: 90
+2025-03-20 08:57:32,930: INFO Creating issue for customer: SW10 CONSULTING LTD, Days since last transaction: 94
+2025-03-20 08:57:32,930: INFO Creating issue for customer: Bright Era Education Ltd, Days since last transaction: 126
+2025-03-20 08:57:32,930: INFO Creating issue for customer: BRITISH HIGH COMMISSION, Days since last transaction: 147
+2025-03-20 08:57:32,930: INFO Creating issue for customer: SALAMIS SHIPPING SERVICES LTD, Days since last transaction: 191
+2025-03-20 08:57:32,930: INFO Creating issue for customer: INDIAN HIGH COMMISSION, Days since last transaction: 379
+2025-03-20 08:57:32,931: INFO Creating issue for customer: JPB ENERGY LTD, Days since last transaction: 489
+2025-03-20 08:57:32,931: INFO Creating issue for customer: CYPRUS INTERNATIONAL ROAD LTD, Days since last transaction: 511
+2025-03-20 08:57:35,897: INFO Successfully created 8 issues: ['SALES-242', 'SALES-243', 'SALES-244', 'SALES-245', 'SALES-246', 'SALES-247', 'SALES-248', 'SALES-249']
+2025-03-20 08:57:35,897: INFO Created 8 new issues.
+2025-03-20 08:57:36,306: INFO Issue SALES-242 moved to 'Lapsed'
+2025-03-20 08:57:36,306: INFO Issue SALES-243 moved to 'Lapsed'
+2025-03-20 08:57:36,306: INFO Issue SALES-244 moved to 'Lapsed'
+2025-03-20 08:57:36,306: INFO Issue SALES-245 moved to 'Lapsed'
+2025-03-20 08:57:36,306: INFO Issue SALES-246 moved to 'Lapsed'
+2025-03-20 08:57:36,307: INFO Issue SALES-247 moved to 'Lapsed'
+2025-03-20 08:57:36,307: INFO Issue SALES-248 moved to 'Lapsed'
+2025-03-20 08:57:36,307: INFO Issue SALES-249 moved to 'Lapsed'
+2025-03-20 08:57:36,307: INFO Job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 08:58:28 EET)" executed successfully
+2025-03-20 08:58:28,727: INFO Running job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 08:59:28 EET)" (scheduled at 2025-03-20 08:58:28.726379+02:00)
+2025-03-20 08:58:28,727: INFO Importing lapsed clients...
+2025-03-20 08:58:28,743: INFO Running job "schedule_emails (trigger: interval[0:02:00], next run at: 2025-03-20 08:58:28 EET)" (scheduled at 2025-03-20 08:58:28.727000+02:00)
+2025-03-20 08:58:28,743: INFO Scheduling emails...
+2025-03-20 08:58:29,111: INFO Found 0 issues in In Progress, that have already had scheduled emails.
+2025-03-20 08:58:29,111: INFO No issues to update.
+2025-03-20 08:58:29,111: INFO Job "schedule_emails (trigger: interval[0:02:00], next run at: 2025-03-20 09:00:28 EET)" executed successfully
+2025-03-20 08:58:29,151: INFO Found 8 existing lapsed issues.
+2025-03-20 08:58:32,203: INFO No new issues to create.
+2025-03-20 08:58:32,203: INFO Job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 08:59:28 EET)" executed successfully
+2025-03-20 08:59:28,742: INFO Running job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 09:00:28 EET)" (scheduled at 2025-03-20 08:59:28.726379+02:00)
+2025-03-20 08:59:28,742: INFO Running job "check_for_new_orders (trigger: interval[0:03:00], next run at: 2025-03-20 09:02:28 EET)" (scheduled at 2025-03-20 08:59:28.726722+02:00)
+2025-03-20 08:59:28,742: INFO Importing lapsed clients...
+2025-03-20 08:59:28,743: INFO Checking for new orders...
+2025-03-20 08:59:29,212: INFO Found 6 existing lapsed issues.
+2025-03-20 08:59:31,115: ERROR Failed to read Google Sheet 'New Web Order': New Web Order
+2025-03-20 08:59:31,115: ERROR Failed to check for new orders: New Web Order
+2025-03-20 08:59:31,116: INFO Job "check_for_new_orders (trigger: interval[0:03:00], next run at: 2025-03-20 09:02:28 EET)" executed successfully
+2025-03-20 08:59:31,789: INFO Creating issue for customer: Bright Era Education Ltd, Days since last transaction: 126
+2025-03-20 08:59:31,789: INFO Creating issue for customer: SALAMIS SHIPPING SERVICES LTD, Days since last transaction: 191
+2025-03-20 08:59:33,005: INFO Successfully created 2 issues: ['SALES-250', 'SALES-251']
+2025-03-20 08:59:33,005: INFO Created 2 new issues.
+2025-03-20 08:59:33,540: INFO Issue SALES-250 moved to 'Lapsed'
+2025-03-20 08:59:33,540: INFO Issue SALES-251 moved to 'Lapsed'
+2025-03-20 08:59:33,541: INFO Job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 09:00:28 EET)" executed successfully
+2025-03-20 09:00:28,729: INFO Running job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 09:01:28 EET)" (scheduled at 2025-03-20 09:00:28.726379+02:00)
+2025-03-20 09:00:28,729: INFO Running job "schedule_emails (trigger: interval[0:02:00], next run at: 2025-03-20 09:02:28 EET)" (scheduled at 2025-03-20 09:00:28.727000+02:00)
+2025-03-20 09:00:28,729: INFO Importing lapsed clients...
+2025-03-20 09:00:28,729: INFO Scheduling emails...
+2025-03-20 09:00:29,260: INFO Found 8 existing lapsed issues.
+2025-03-20 09:00:29,290: INFO Found 2 issues in In Progress, that have already had scheduled emails.
+2025-03-20 09:00:31,113: INFO Labels updated successfully for SALES-246
+2025-03-20 09:00:31,113: INFO Labels updated successfully for SALES-244
+2025-03-20 09:00:31,113: INFO Returned 2 emails to be scheduled.
+2025-03-20 09:00:31,113: INFO Email will be sent on 2025-03-20 09:00:36.113827
+2025-03-20 09:00:31,114: INFO Added job "send_email" to job store "default"
+2025-03-20 09:00:31,115: INFO Email will be sent on 2025-03-20 09:00:36.115013
+2025-03-20 09:00:31,115: INFO Added job "send_email" to job store "default"
+2025-03-20 09:00:31,115: INFO Job "schedule_emails (trigger: interval[0:02:00], next run at: 2025-03-20 09:02:28 EET)" executed successfully
+2025-03-20 09:00:32,073: INFO No new issues to create.
+2025-03-20 09:00:32,073: INFO Job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 09:01:28 EET)" executed successfully
+2025-03-20 09:00:36,116: INFO Removed job f32a5cbdafb34d27a1440cdb78157547
+2025-03-20 09:00:36,116: INFO Running job "send_email (trigger: date[2025-03-20 09:00:36 EET], next run at: 2025-03-20 09:00:36 EET)" (scheduled at 2025-03-20 09:00:36.113827+02:00)
+2025-03-20 09:00:36,117: INFO Removed job edb5328d80d8412e800a58dc08305dc1
+2025-03-20 09:00:36,117: INFO Running job "send_email (trigger: date[2025-03-20 09:00:36 EET], next run at: 2025-03-20 09:00:36 EET)" (scheduled at 2025-03-20 09:00:36.115013+02:00)
+2025-03-20 09:00:38,314: INFO Email sent successfully!
+2025-03-20 09:00:38,374: INFO Job "send_email (trigger: date[2025-03-20 09:00:36 EET], next run at: 2025-03-20 09:00:36 EET)" executed successfully
+2025-03-20 09:00:38,744: INFO Email sent successfully!
+2025-03-20 09:00:38,814: INFO Job "send_email (trigger: date[2025-03-20 09:00:36 EET], next run at: 2025-03-20 09:00:36 EET)" executed successfully
+2025-03-20 09:01:28,740: INFO Running job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 09:02:28 EET)" (scheduled at 2025-03-20 09:01:28.726379+02:00)
+2025-03-20 09:01:28,740: INFO Importing lapsed clients...
+2025-03-20 09:01:29,155: INFO Found 8 existing lapsed issues.
+2025-03-20 09:01:32,321: INFO No new issues to create.
+2025-03-20 09:01:32,321: INFO Job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 09:02:28 EET)" executed successfully
+2025-03-20 09:02:28,743: INFO Running job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 09:03:28 EET)" (scheduled at 2025-03-20 09:02:28.726379+02:00)
+2025-03-20 09:02:28,743: INFO Running job "check_for_new_orders (trigger: interval[0:03:00], next run at: 2025-03-20 09:05:28 EET)" (scheduled at 2025-03-20 09:02:28.726722+02:00)
+2025-03-20 09:02:28,743: INFO Running job "schedule_emails (trigger: interval[0:02:00], next run at: 2025-03-20 09:04:28 EET)" (scheduled at 2025-03-20 09:02:28.727000+02:00)
+2025-03-20 09:02:28,743: INFO Importing lapsed clients...
+2025-03-20 09:02:28,743: INFO Checking for new orders...
+2025-03-20 09:02:28,744: INFO Scheduling emails...
+2025-03-20 09:02:29,233: INFO Found 8 existing lapsed issues.
+2025-03-20 09:02:29,255: INFO Found 2 issues in In Progress, that have already had scheduled emails.
+2025-03-20 09:02:30,003: INFO No issues to update.
+2025-03-20 09:02:30,003: INFO Job "schedule_emails (trigger: interval[0:02:00], next run at: 2025-03-20 09:04:28 EET)" executed successfully
+2025-03-20 09:02:31,463: INFO Creating issue for customer: ELMASCO LTD, Days since last transaction: 7
+2025-03-20 09:02:31,463: INFO Creating issue for customer: AYIA NAPA NISSI DEVELOPMENTS LTD, Days since last transaction: 8
+2025-03-20 09:02:31,463: INFO Creating issue for customer: BRAINSTORM ENTERPRISES LTD, Days since last transaction: 8
+2025-03-20 09:02:31,463: INFO Creating issue for customer: CYANT ARB LTD, Days since last transaction: 8
+2025-03-20 09:02:32,357: INFO No new issues to create.
+2025-03-20 09:02:32,357: INFO Job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 09:03:28 EET)" executed successfully
+2025-03-20 09:02:33,707: INFO Successfully created 4 issues: ['SALES-252', 'SALES-253', 'SALES-254', 'SALES-255']
+2025-03-20 09:02:34,337: INFO Issue SALES-252 moved to 'New Web Order'
+2025-03-20 09:02:34,337: INFO Issue SALES-253 moved to 'New Web Order'
+2025-03-20 09:02:34,337: INFO Issue SALES-254 moved to 'New Web Order'
+2025-03-20 09:02:34,337: INFO Issue SALES-255 moved to 'New Web Order'
+2025-03-20 09:02:37,357: INFO Sheet 'New Web Order' cleared except for header.
+2025-03-20 09:02:37,357: INFO Job "check_for_new_orders (trigger: interval[0:03:00], next run at: 2025-03-20 09:05:28 EET)" executed successfully
+2025-03-20 09:03:28,729: INFO Running job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 09:04:28 EET)" (scheduled at 2025-03-20 09:03:28.726379+02:00)
+2025-03-20 09:03:28,729: INFO Importing lapsed clients...
+2025-03-20 09:03:29,143: INFO Found 8 existing lapsed issues.
+2025-03-20 09:03:32,288: INFO No new issues to create.
+2025-03-20 09:03:32,288: INFO Job "import_lapsed_clients (trigger: interval[0:01:00], next run at: 2025-03-20 09:04:28 EET)" executed successfully
+2025-03-20 09:03:39,786: INFO Scheduler has been shut down
