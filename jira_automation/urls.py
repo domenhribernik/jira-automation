@@ -21,4 +21,6 @@ from main_app import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
+    path('run-task/<str:task_name>/', views.run_task, name='run_task'),
+    path('schedule-task/<str:task_name>/', views.schedule_task, name='schedule_task'),
 ]

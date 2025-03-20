@@ -9,6 +9,7 @@ import requests
 import gspread
 import logging
 from pathlib import Path
+from io import StringIO
 from oauth2client.service_account import ServiceAccountCredentials
 import smtplib
 from email.mime.text import MIMEText
@@ -51,6 +52,18 @@ HEADERS = {
     "Authorization": f"Basic {auth}"
 }
 
+class InMemoryLogHandler(logging.Handler):
+    def __init__(self):
+        super().__init__()
+        self.log_stream = StringIO()
+
+    def emit(self, record):
+        log_entry = self.format(record)
+        self.log_stream.write(log_entry + "#")
+
+    def get_logs(self):
+        return self.log_stream.getvalue()
+
 def setup_logging(log_file: str = "app.log"):
     """Set up logging configuration."""
     log_dir = Path("logs")
@@ -63,12 +76,23 @@ def setup_logging(log_file: str = "app.log"):
         handlers=[
             logging.FileHandler(log_path),
             logging.StreamHandler(),
+            in_memory_handler := InMemoryLogHandler(),
         ],
     )
     sys.stdout.reconfigure(encoding='utf-8')
     print(f"Logging setup complete. Logs will be saved to: {log_path}")
-    logging.info("=========================")
-    logging.info("Starting the application...")
+    print("=========================")
+    print("Starting the application...")
+
+    return in_memory_handler
+
+def log(type, message):
+    if type == "info":
+        logging.info(message)
+    elif type == "error":
+        logging.error(message)
+    elif type == "warning":
+        logging.warning(message)
 
 def authenticate_google_sheets():
     """Authenticate and return a Google Sheets client."""
@@ -583,8 +607,16 @@ def check_for_new_orders(sheet):
 def print_task_list():
     jobs = scheduler.get_jobs()
     if not jobs:
-        print("No scheduled tasks.")
+        logging.info("No scheduled tasks.")
     else:
-        print("Scheduled Tasks:")
+        logging.info("Scheduled Tasks:")
         for job in jobs:
-            print(f"- Job ID: {job.id}, Function: {job.func.__name__}, Run Time: {job.next_run_time}")
+            logging.info(f"- Job ID: {job.id}, Function: {job.func.__name__}, Run Time: {job.next_run_time}")
+
+def print_full_task(task_name):
+    jobs = scheduler.get_jobs()
+    if jobs:
+        for job in jobs:
+            if job.func.__name__ == task_name:
+                return True, job
+    return False, {}

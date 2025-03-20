@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Scheduler</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'main_app/style.css' %}">
+</head>
+<body>
+    <div class="container">
+        <div>
+            <div class="scheduleContainer">
+                <h1>Schedule Tasks</h1>
+                <div id="taskSchedule">
+                    <div class="taskScheduleItem" data-task-name="import_lapsed_clients">
+                        <label>Import Lapsed Clients</label>
+                        <div class="intervalInput">
+                            <span>Days: </span>
+                            <input type="number" min="1" value="1" class="intervalDays">
+                        </div>
+                        <span class="status">Deactivated</span>
+                        <button class="activateBtn" onclick="scheduleTask('import_lapsed_clients')">Activate</button>
+                        <span class="countdown"></span>
+                    </div>
+                    <div class="taskScheduleItem" data-task-name="check_for_new_orders">
+                        <label>Check New Orders</label>
+                        <div class="intervalInput">
+                            <span>Days: </span>
+                            <input type="number" min="1" value="1" class="intervalDays">
+                        </div>
+                        <span class="status">Deactivated</span>
+                        <button class="activateBtn" onclick="scheduleTask('check_for_new_orders')">Activate</button>
+                        <span class="countdown"></span>
+                    </div>
+                    <div class="taskScheduleItem" data-task-name="schedule_emails">
+                        <label>Schedule Emails</label>
+                        <div class="intervalInput">
+                            <span>Days: </span>
+                            <input type="number" min="1" value="1" class="intervalDays">
+                        </div>
+                        <span class="status">Deactivated</span>
+                        <button class="activateBtn" onclick="scheduleTask('schedule_emails')">Activate</button>
+                        <span class="countdown"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div class="taskContainer">
+                <h1>Run Task</h1>
+                <button onclick="triggerTask('import_lapsed_clients')">Import Lapsed Clients</button>
+                <button onclick="triggerTask('check_for_new_orders')">Check New Orders</button>
+                <button onclick="triggerTask('schedule_emails')">Schedule Emails</button>
+                <button onclick="triggerTask('print_task_list')">Print Task List</button>
+            </div>
+            <h3 id="responseTitle"></h3>
+            <div id="response"></div>
+        </div>
+    </div>
+
+    <script>
+        function triggerTask(taskName) {
+            fetch(`/run-task/${taskName}/`, { method: "POST", headers: { "X-CSRFToken": "{{ csrf_token }}" } })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("responseTitle").innerText = data.message;
+                document.getElementById("response").innerHTML = data.logs.map(log => `<div>${log}</div>`).join('');
+                document.getElementById("response").scrollTop = document.getElementById("response").scrollHeight;
+            })
+            .catch(error => {
+                document.getElementById("response").innerText = "Error running task.";
+            });
+        }
+
+        function scheduleTask(taskName) {
+            const intervalDays = document.querySelector(`.taskScheduleItem[data-task-name="${taskName}"] .intervalDays`).value;
+            fetch(`/schedule-task/${taskName}/`, {
+                method: "POST",
+                headers: { "X-CSRFToken": "{{ csrf_token }}" },
+                body: JSON.stringify({ intervalDays })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.querySelector(`.taskScheduleItem[data-task-name="${taskName}"] .status`).innerText = data.status;
+                document.querySelector(`.taskScheduleItem[data-task-name="${taskName}"] .countdown`).innerText = data.countdown;
+            })
+            .catch(error => {
+                console.error(error);
+            });
+        }
+    </script>
+</body>
+</html>
