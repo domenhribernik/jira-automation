@@ -86,14 +86,6 @@ def setup_logging(log_file: str = "app.log"):
 
     return in_memory_handler
 
-def log(type, message):
-    if type == "info":
-        logging.info(message)
-    elif type == "error":
-        logging.error(message)
-    elif type == "warning":
-        logging.warning(message)
-
 def authenticate_google_sheets():
     """Authenticate and return a Google Sheets client."""
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -612,11 +604,3 @@ def print_task_list():
         logging.info("Scheduled Tasks:")
         for job in jobs:
             logging.info(f"- Job ID: {job.id}, Function: {job.func.__name__}, Run Time: {job.next_run_time}")
-
-def print_full_task(task_name):
-    jobs = scheduler.get_jobs()
-    if jobs:
-        for job in jobs:
-            if job.func.__name__ == task_name:
-                return True, job
-    return False, {}

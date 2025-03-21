@@ -7,18 +7,10 @@ body {
 
 .container {
     display: grid;
-    grid-template-columns: 60% 40%;
+    grid-template-columns: 65% 35%;
+    margin: 0 30px;
 }
 
-.taskContainer, .scheduleContainer {
-    max-width: 80%;
-    margin: 50px auto;
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
-}
 
 h1 {
     color: #333;
@@ -43,6 +35,28 @@ button:hover {
     background: #0056b3;
 }
 
+button.deactivate {
+    background: #dc3545;
+}
+
+button.deactivate:hover {
+    background: #c82333;
+}
+
+.taskContainer, .scheduleContainer {
+    max-width: 80%;
+    margin: 50px auto;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.scheduleContainer {
+    max-width: 85%;
+}
+
 /*? Task Scheduling */
 .taskScheduleItem {
     display: grid;
@@ -56,6 +70,8 @@ button:hover {
 
 .taskScheduleItem label {
     font-weight: bold;
+    text-align: left;
+    padding: 0 5px;
 }
 
 .intervalInput span, .intervalInput input {
@@ -70,6 +86,9 @@ button:hover {
     margin: 0 auto;
     width: 100px;
     color: red;
+    font-weight: bold;
+    font-family: monospace;
+    font-size: 1rem;
     text-align: center;
 }
 
@@ -82,17 +101,19 @@ button:hover {
     font-family: monospace;
 }
 
+#log {
+    max-width: 80%;
+    margin: 50px auto;
+    font-family: monospace;
+    font-size: 1rem;
+}
+
 /*? Task Buttons */
 #response {
     max-width: 600px;
     max-height: 45vh;
     overflow-y: scroll;
     margin: 0 auto;
-}
-
-#responseTitle {
-    color: green;
-    text-align: center;
 }
 
 #response div {
@@ -107,6 +128,7 @@ button:hover {
 @media (max-width: 1100px) {
     .container {
         grid-template-columns: 1fr;
+        margin: 0;
     }
 
     .taskContainer, .scheduleContainer {

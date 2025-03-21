@@ -1,3 +1,4 @@
+from apscheduler.triggers.interval import IntervalTrigger
 from django.shortcuts import render
 from django.http import JsonResponse
 from lib.lib import *
@@ -31,31 +32,90 @@ def run_task(request, task_name):
         })
     return JsonResponse({"message": "Invalid request"}, status=400)
 
-def schedule_task(request, task_name):
+def get_scheduled_tasks(request):
+    jobs = scheduler.get_jobs()
+    task_status = {}
+
+    interval = 1
+
+    for job in jobs:
+        if isinstance(job.trigger, IntervalTrigger):
+            interval = job.trigger.interval.days
+        task_status[job.name] = {
+            "status": 1,  # 1 for active, 0 for inactive
+            "next_run": job.next_run_time.strftime("%Y-%m-%d %H:%M:%S") if job.next_run_time else None,
+            "interval": interval
+        }
+
+    return JsonResponse(task_status)
+
+def schedule_task(request, task_name): #TODO Make a state for active, and make this function like a switch on and off
     if request.method == "POST":
-        job_exists, job = print_full_task(task_name)
-        if job_exists:
-            return JsonResponse({
-                "status": 0,
-                "message": f"Task {task_name} deleted successfully!",
-            })
+        try:
+            data = json.loads(request.body)
+            interval_days = int(data.get('intervalDays'))
+        except json.JSONDecodeError:
+            return JsonResponse({"message": "Invalid JSON"}, status=400)
+
         if task_name == "import_lapsed_clients":
-            scheduler.add_job(
+            job = scheduler.add_job(
                 import_lapsed_clients,
                 'interval',
-                days=1,
-                args=["Lapsed"]
+                minutes=interval_days,
+                args=["Lapsed"],
+                id=f"job_{task_name}",
+                replace_existing=True
             )
-            log("info", print_full_task("import_lapsed_clients"))
         elif task_name == "check_for_new_orders":
-            log("info", "Checking for new orders")
+            job = scheduler.add_job(
+                check_for_new_orders,
+                'interval',
+                days=interval_days,
+                args=["New Web Orders"],
+                id=f"job_{task_name}",
+                replace_existing=True
+            )
         elif task_name == "schedule_emails":
-            log("info", "Scheduling emails")
+            job = scheduler.add_job(
+                schedule_emails,
+                'interval',
+                days=interval_days,
+                args=[3, "In Progress"], #? 3 days delay
+                id=f"job_{task_name}",
+                replace_existing=True
+            )
         else:
             return JsonResponse({"message": "Invalid task name"}, status=400)
-
+        
         return JsonResponse({
-            "status": 1,
-            "countdown": 1234,
+            "status": True,
+            "next_run": job.next_run_time.strftime("%Y-%m-%d %H:%M:%S"),
+            "interval": interval_days
         })
     return JsonResponse({"message": "Invalid request"}, status=400)
+
+def delete_scheduled_task(request, task_name):
+    if request.method == "POST":
+        job = scheduler.get_job(f"job_{task_name}")
+        logging.info(f"Deleting job {job}")
+        if job:
+            scheduler.remove_job(job.id)
+            return JsonResponse({
+                "status": False,
+                "next_run:" : "Not scheduled"
+            })
+        else:
+            return JsonResponse({
+                "error": f"Job '{task_name}' not found"
+            }, status=404)
+        
+    return JsonResponse({"message": "Invalid request"}, status=400)
+
+def view_logs(request):
+    try:
+        with open("Logs/app.log", "r") as log_file:
+            log_content = log_file.read()
+    except FileNotFoundError:
+        log_content = "No logs available."
+
+    return render(request, "main_app/logs.html", {"log_content": log_content})
