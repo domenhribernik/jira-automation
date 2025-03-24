@@ -23,6 +23,7 @@ urlpatterns = [
     path('', views.home, name='home'),
     path("logs/", views.view_logs, name="view_logs"),
     path('get-scheduled-tasks/', views.get_scheduled_tasks, name='get_scheduled_tasks'),   
+    path('get-sub-tasks/<str:category>/', views.get_sub_tasks, name='get_sub_tasks'),
     path('run-task/<str:task_name>/', views.run_task, name='run_task'),
     path('schedule-task/<str:task_name>/', views.schedule_task, name='schedule_task'),
     path('delete-scheduled-task/<str:task_name>/', views.delete_scheduled_task, name='delete_scheduled_task'),

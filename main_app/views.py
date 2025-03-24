@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from lib.lib import *
 
 in_memory_handler = setup_logging()
+NEWLY_SCHEDULED_TASKS = []
 # Create your views here.
 def home(request):
     return render(request, 'main_app/index.html')
@@ -36,24 +37,59 @@ def get_scheduled_tasks(request):
     jobs = scheduler.get_jobs()
     task_status = {}
 
-    interval = 1
-
     for job in jobs:
         if isinstance(job.trigger, IntervalTrigger):
-            interval = job.trigger.interval.days
+            interval = job.trigger.interval
+
+            if interval.days > 0:
+                interval_value = interval.days
+                interval_unit = "days"
+            elif interval.seconds % 3600 == 0:
+                interval_value = interval.seconds // 3600
+                interval_unit = "hours"
+            elif interval.seconds % 60 == 0:
+                interval_value = interval.seconds // 60
+                interval_unit = "minutes"
+            else:
+                interval_value = interval.seconds
+                interval_unit = "seconds"
+        else:
+            interval_value = None
+            interval_unit = None
+
         task_status[job.name] = {
             "status": 1,  # 1 for active, 0 for inactive
-            "next_run": job.next_run_time.strftime("%Y-%m-%d %H:%M:%S") if job.next_run_time else None,
-            "interval": interval
+            "interval_value": interval_value,
+            "interval_unit": interval_unit,
+            "next_run": job.next_run_time.strftime("%Y-%m-%d %H:%M:%S") if job.next_run_time else None
         }
 
     return JsonResponse(task_status)
 
-def schedule_task(request, task_name): #TODO Make a state for active, and make this function like a switch on and off
+
+def get_sub_tasks(request, category):
+    jobs = scheduler.get_jobs()
+    task_list = {}
+
+    for job in jobs:
+        if not job.id.startswith(category + "_"):
+            continue
+
+        task_list[job.name] = {
+            "status": 1,  # 1 for active, 0 for inactive
+            "id": job.id,
+            "next_run": job.next_run_time.strftime("%Y-%m-%d %H:%M:%S") if job.next_run_time else None
+        }
+
+    return JsonResponse(task_list)
+
+def schedule_task(request, task_name):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            interval_days = int(data.get('intervalDays'))
+            value = int(data.get('interval_value'))
+            unit = data.get('interval_unit')
+            interval_args = {unit: value}
         except json.JSONDecodeError:
             return JsonResponse({"message": "Invalid JSON"}, status=400)
 
@@ -61,7 +97,7 @@ def schedule_task(request, task_name): #TODO Make a state for active, and make t
             job = scheduler.add_job(
                 import_lapsed_clients,
                 'interval',
-                minutes=interval_days,
+                 **interval_args,
                 args=["Lapsed"],
                 id=f"job_{task_name}",
                 replace_existing=True
@@ -70,7 +106,7 @@ def schedule_task(request, task_name): #TODO Make a state for active, and make t
             job = scheduler.add_job(
                 check_for_new_orders,
                 'interval',
-                days=interval_days,
+                 **interval_args,
                 args=["New Web Orders"],
                 id=f"job_{task_name}",
                 replace_existing=True
@@ -79,7 +115,7 @@ def schedule_task(request, task_name): #TODO Make a state for active, and make t
             job = scheduler.add_job(
                 schedule_emails,
                 'interval',
-                days=interval_days,
+                 **interval_args,
                 args=[3, "In Progress"], #? 3 days delay
                 id=f"job_{task_name}",
                 replace_existing=True
@@ -90,7 +126,8 @@ def schedule_task(request, task_name): #TODO Make a state for active, and make t
         return JsonResponse({
             "status": True,
             "next_run": job.next_run_time.strftime("%Y-%m-%d %H:%M:%S"),
-            "interval": interval_days
+            "interval_value": value,
+            "interval_unit": unit
         })
     return JsonResponse({"message": "Invalid request"}, status=400)
 

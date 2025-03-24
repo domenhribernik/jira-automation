@@ -60,7 +60,7 @@ button.deactivate:hover {
 /*? Task Scheduling */
 .taskScheduleItem {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto;
     width: 100%;
     align-items: center;
     margin-bottom: 10px;
@@ -99,6 +99,40 @@ button.deactivate:hover {
 .taskScheduleItem .countdown {
     margin-left: 10px;
     font-family: monospace;
+}
+
+.expand-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: gray;
+    transition: transform 0.3s ease-in-out;
+}
+
+.expand-btn i {
+    margin-right: 15px;
+}
+
+.expand-btn:hover {
+    background: none;
+}
+
+.subTaskContainer {
+    display: none;
+    grid-column: 1 / -1;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 5px;
+    margin-top: 5px;
+}
+
+.subTaskContainer.visible {
+    display: block;
+}
+
+.expand-btn.open .arrow {
+    transform: rotate(180deg);
 }
 
 #log {

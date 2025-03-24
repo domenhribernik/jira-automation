@@ -545,7 +545,7 @@ def schedule_emails(days_delay, status): #? 4 requests per call
     except Exception as e:
         logging.error(f"Failed to retrieve emails to send: {e}")
         return
-    delay_seconds = 5
+    delay_seconds = 30
     for issue_key, subject, message, email_receiver, send_email_delay in emails_to_send:
         try:
             run_date = datetime.now() + timedelta(seconds=delay_seconds)
@@ -557,7 +557,9 @@ def schedule_emails(days_delay, status): #? 4 requests per call
                 send_email,
                 'date',
                 run_date=run_date,
-                args=[subject, message, email_receiver]
+                args=[subject, message, email_receiver],
+                id=f"email_{issue_key}",
+                replace_existing=True
             )
             print(f"✉️  Email scheduled for issue {issue_key} for {email_receiver} in {delay_seconds} seconds.")
         except Exception as e:
