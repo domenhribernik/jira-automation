@@ -34,53 +34,55 @@ def run_task(request, task_name):
     return JsonResponse({"message": "Invalid request"}, status=400)
 
 def get_scheduled_tasks(request):
-    jobs = scheduler.get_jobs()
-    task_status = {}
+    if request.method == "GET":
+        jobs = scheduler.get_jobs()
+        task_status = {}
 
-    for job in jobs:
-        if isinstance(job.trigger, IntervalTrigger):
-            interval = job.trigger.interval
+        for job in jobs:
+            if isinstance(job.trigger, IntervalTrigger):
+                interval = job.trigger.interval
 
-            if interval.days > 0:
-                interval_value = interval.days
-                interval_unit = "days"
-            elif interval.seconds % 3600 == 0:
-                interval_value = interval.seconds // 3600
-                interval_unit = "hours"
-            elif interval.seconds % 60 == 0:
-                interval_value = interval.seconds // 60
-                interval_unit = "minutes"
+                if interval.days > 0:
+                    interval_value = interval.days
+                    interval_unit = "days"
+                elif interval.seconds % 3600 == 0:
+                    interval_value = interval.seconds // 3600
+                    interval_unit = "hours"
+                elif interval.seconds % 60 == 0:
+                    interval_value = interval.seconds // 60
+                    interval_unit = "minutes"
+                else:
+                    interval_value = interval.seconds
+                    interval_unit = "seconds"
             else:
-                interval_value = interval.seconds
-                interval_unit = "seconds"
-        else:
-            interval_value = None
-            interval_unit = None
+                interval_value = None
+                interval_unit = None
 
-        task_status[job.name] = {
-            "status": 1,  # 1 for active, 0 for inactive
-            "interval_value": interval_value,
-            "interval_unit": interval_unit,
-            "next_run": job.next_run_time.strftime("%Y-%m-%d %H:%M:%S") if job.next_run_time else None
-        }
+            task_status[job.name] = {
+                "status": 1,  # 1 for active, 0 for inactive
+                "interval_value": interval_value,
+                "interval_unit": interval_unit,
+                "next_run": job.next_run_time.strftime("%Y-%m-%d %H:%M:%S") if job.next_run_time else None
+            }
 
     return JsonResponse(task_status)
 
 
-def get_sub_tasks(request, category):
-    jobs = scheduler.get_jobs()
-    task_list = {}
+def get_sub_tasks(request, category): #TODO if app reboots the scheduled emails are lost
+    if request.method == "GET":
+        jobs = scheduler.get_jobs()
+        task_list = {} 
 
-    for job in jobs:
-        if not job.id.startswith(category + "_"):
-            continue
+        for job in jobs:
+            if not job.id.startswith(category + "_"):
+                continue
 
-        task_list[job.name] = {
-            "status": 1,  # 1 for active, 0 for inactive
-            "id": job.id,
-            "next_run": job.next_run_time.strftime("%Y-%m-%d %H:%M:%S") if job.next_run_time else None
-        }
-
+            task_list[job.id] = {
+                "status": 1,  # 1 for active, 0 for inactive
+                "id": job.id,
+                "next_run": job.next_run_time.strftime("%Y-%m-%d %H:%M:%S") if job.next_run_time else None
+            }
+        logging.info(f"Task list: {task_list}")
     return JsonResponse(task_list)
 
 def schedule_task(request, task_name):
