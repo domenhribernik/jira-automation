@@ -27,7 +27,6 @@
                 <button class="activate" onclick="triggerTask('schedule_emails')">Schedule Emails</button>
                 <button class="activate" onclick="triggerTask('print_task_list')">Print Task List</button>
                 <button class="activate" onclick="window.open('/logs/', '_blank')">Open Full Log</button>
-                <button class="activate" onclick="getSubTasks('schedule_emails', 'email')">Get Email Subtasks</button>
             </div>
             <div id="response"></div>
         </div>
@@ -66,12 +65,12 @@
                 .then(response => response.json())
                 .then(data => {
                     const subTaskContainer = document.querySelector(`.taskScheduleItem[data-task-name="${taskName}"] .subTaskContainer`);
-                    console.log(subTaskContainer);
-                    console.log(Object.entries(data).length);
                     if (Object.entries(data).length === 0) return;
+                    const fragment = document.createDocumentFragment();
                     Object.entries(data).forEach(([subTaskName, subTaskData]) => {
-                        subTaskContainer.append(createSubTaskElement(subTaskName, subTaskData, subTaskContainer));
+                        fragment.appendChild(createSubTaskElement(subTaskName, subTaskData, subTaskContainer));
                     });
+                    subTaskContainer.appendChild(fragment);
                 })
                 .catch(error => console.error("Error fetching sub-tasks:", error));
         }

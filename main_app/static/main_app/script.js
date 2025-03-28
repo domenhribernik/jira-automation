@@ -18,7 +18,6 @@ function toggleSubTasks(expandButton, subTaskContainer) {
 
 function updateTaskList(taskName, taskData) {
     const logContainer = document.getElementById("log");
-    logContainer.innerHTML = "";
     if (taskData.status) {
         const entryDiv = document.createElement("div");
         entryDiv.id = `log_${taskName}`;
@@ -102,7 +101,7 @@ function createSubTaskElement(subTaskName, subTaskData, subTaskContainer) {
 
     // Sub-task name label
     const label = document.createElement("label");
-    label.innerText = subTaskName.replace(/_/g, " ");
+    label.innerText = subTaskName.replace(/^email_/, "");
 
     // Countdown timer span
     const countdownSpan = document.createElement("span");
@@ -113,7 +112,7 @@ function createSubTaskElement(subTaskName, subTaskData, subTaskContainer) {
     const deleteButton = document.createElement("button");
     deleteButton.classList.add("delete-btn");
     deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>'; // FontAwesome trash icon
-    deleteButton.onclick = () => deleteScheduledTask(subTaskName, subTaskItem);
+    deleteButton.onclick = () => deleteScheduledTask(subTaskData.id);
 
     // Append elements
     subTaskItem.appendChild(label);

@@ -6,13 +6,13 @@ def main():
         import_lapsed_clients,
         'interval',
         minutes=30,
-        args=["Lapsed"]
+        args=["Jira Sales API", "Lapsed"]
     )
     scheduler.add_job(
         check_for_new_orders,
         'interval',
         minutes=40,
-        args=["New Web Orders"]
+        args=["Jira Sales API", "New Web Orders"]
     )
     scheduler.add_job(
         schedule_emails,

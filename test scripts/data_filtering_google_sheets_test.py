@@ -6,7 +6,7 @@ from datetime import date, datetime
 # Google Sheets API Setup
 GOOGLE_SHEETS_CREDENTIALS_FILE = "credentials.json"
 GOOGLE_SHEET_NAME = "Jira Sales API"
-GOOGLE_SHEET_TAB_NAME = "Sheet1" 
+GOOGLE_SHEET_TAB_NAME = "test" 
 
 def authenticate_google_sheets():
     # Define the scope
@@ -27,24 +27,22 @@ def read_google_sheet(client):
     return df
 
 def formate_date(date):
-    parsed_date = datetime.strptime(date, "%m/%d/%Y")
+    parsed_date = datetime.strptime(date, "%d/%m/%Y")
     return parsed_date.strftime("%Y-%m-%d")
 
 def main():
     client = authenticate_google_sheets()
-    df = read_google_sheet(client)
+    df = read_google_sheet(client) 
     for index, row in df.iterrows():
-        last_date = formate_date(row['Last Transaction Date'])
+        last_date = formate_date(row['Last Payment Date'])
         days_diff = (date.today() - datetime.strptime(last_date, "%Y-%m-%d").date()).days
-        if days_diff < 90:
-            continue
         print(f"\nRow {index + 1}:")
-        print(f"Customer Name: {row['Customer Name']}")
-        print(f"Last Transaction Amount: {row['Last Transaction Amount']}")
+        print(f"Customer Name: {row['Name']}")
+        print(f"Last Transaction Amount: {row['Last Payment Amount']}")
         print(f"Email: {row['Email']}")
-        print(f"SMS: {row['SMS']}")
+        print(f"SMS: {row['Telephone 1']}")
         print(f"Today: {date.today()}")
-        print(f"Last Transaction Date: {last_date}")
+        print(f"Last Payment Date: {last_date}")
         print(f"Days since last transaction: {days_diff}")
         print("=" * 50)  # Separator for readability
 

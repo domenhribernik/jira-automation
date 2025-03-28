@@ -12,9 +12,9 @@ def home(request):
 def run_task(request, task_name):
     if request.method == "POST":
         if task_name == "import_lapsed_clients":
-            import_lapsed_clients("Lapsed")
+            import_lapsed_clients("Lapsed", "Lapsed")
         elif task_name == "check_for_new_orders":
-            check_for_new_orders("New Web Orders")
+            check_for_new_orders("New Web Orders", "New Web Orders")
         elif task_name == "schedule_emails":
             schedule_emails(3, "In Progress")  # 3 days delay
         elif task_name == "print_task_list":
@@ -100,7 +100,7 @@ def schedule_task(request, task_name):
                 import_lapsed_clients,
                 'interval',
                  **interval_args,
-                args=["Lapsed"],
+                args=["New Web Orders", "Lapsed"],
                 id=f"job_{task_name}",
                 replace_existing=True
             )
@@ -109,7 +109,7 @@ def schedule_task(request, task_name):
                 check_for_new_orders,
                 'interval',
                  **interval_args,
-                args=["New Web Orders"],
+                args=["New Web Orders", "New Web Orders"],
                 id=f"job_{task_name}",
                 replace_existing=True
             )
@@ -135,8 +135,9 @@ def schedule_task(request, task_name):
 
 def delete_scheduled_task(request, task_name):
     if request.method == "POST":
-        job = scheduler.get_job(f"job_{task_name}")
-        logging.info(f"Deleting job {job}")
+        job = scheduler.get_job(task_name)
+        if not job:
+            job = scheduler.get_job(f"job_{task_name}")
         if job:
             scheduler.remove_job(job.id)
             return JsonResponse({

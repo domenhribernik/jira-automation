@@ -37,7 +37,6 @@ with open('users.json', 'r') as file:
 auth = base64.b64encode(f"{JIRA_EMAIL}:{JIRA_API_TOKEN}".encode()).decode()
 
 GOOGLE_SHEETS_CREDENTIALS_FILE = "credentials.json"
-GOOGLE_SHEET_NAME = "Jira Sales API"
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
@@ -99,10 +98,10 @@ def authenticate_google_sheets():
         logging.error(f"Failed to authenticate Google Sheets: {e}")
         raise
 
-def read_google_sheet(client, sheet):
+def read_google_sheet(client, filename, sheet):
     """Read a Google Sheet and return it as a pandas DataFrame."""
     try:
-        worksheet = client.open(GOOGLE_SHEET_NAME).worksheet(sheet)
+        worksheet = client.open(filename).worksheet(sheet)
         data: list[list[str]] = worksheet.get_all_values()
         df: pd.DataFrame = pd.DataFrame(data[1:], columns=data[0])
         return df
@@ -110,10 +109,10 @@ def read_google_sheet(client, sheet):
         logging.error(f"Failed to read Google Sheet '{sheet}': {e}")
         raise
 
-def clear_google_sheet(client, sheet):
+def clear_google_sheet(client, filename, sheet):
     """Clear all rows in a Google Sheet except the header."""
     try:
-        worksheet = client.open(GOOGLE_SHEET_NAME).worksheet(sheet)
+        worksheet = client.open(filename).worksheet(sheet)
         all_data: list[list[str]] = worksheet.get_all_values()
         if len(all_data) > 1:
             num_columns: int = len(all_data[0])
@@ -276,16 +275,18 @@ def create_jira_issues(df, existing_elements, check_date=True):
     bulk_issue_data = {"issueUpdates": []}
 
     for _, row in df.iterrows():
-        if row['Customer Name'] in existing_elements:
+        if row['Name'] in existing_elements:
             continue
-
-        last_date = datetime.strptime(row['Last Transaction Date'], "%m/%d/%Y").strftime("%Y-%m-%d")
+        if check_date: #! Have to remove, we need to agree on fixed date format
+            last_date = datetime.strptime(row['Last Payment Date'], "%m/%d/%Y").strftime("%Y-%m-%d")
+        else:    
+            last_date = datetime.strptime(row['Last Payment Date'], "%d/%m/%Y").strftime("%Y-%m-%d")
         days_diff = (date.today() - datetime.strptime(last_date, "%Y-%m-%d").date()).days
         if check_date and days_diff < 90:
             continue
 
-        company_name = row['Customer Name']
-        customer_name = row['Customer Name']
+        company_name = row['Name']
+        customer_name = row['Name']
 
         logging.info(f"Creating issue for customer: {customer_name}, Days since last transaction: {days_diff}")
 
@@ -297,10 +298,10 @@ def create_jira_issues(df, existing_elements, check_date=True):
                 "project": {"key": JIRA_PROJECT_KEY},
                 "summary": str(customer_name),
                 "customfield_10050": str(last_date), 
-                "customfield_10052": str(row['Last Transaction Amount']),
+                "customfield_10052": str(row['Last Payment Amount']),
                 "customfield_10041": str(company_name),
                 "customfield_10043": str(customer_name),
-                "customfield_10042": str(row['SMS']),
+                "customfield_10042": str(row['Telephone 1']),
                 "customfield_10039": str(row['Email'])
             }
         }
@@ -565,7 +566,7 @@ def schedule_emails(days_delay, status): #? 4 requests per call
             logging.error(f"Failed to schedule email for issue {issue_key}: {e}")
             continue
 
-def import_lapsed_clients(sheet): #? 3 requests per call (max 100 issues in status)
+def import_lapsed_clients(filename, sheet): #? 3 requests per call (max 100 issues in status)
     """Import lapsed clients from a Google Sheet and transition them to status."""
     logging.info("Importing lapsed clients...")
 
@@ -573,7 +574,7 @@ def import_lapsed_clients(sheet): #? 3 requests per call (max 100 issues in stat
         issues, keys, lapsed = search_issues("Lapsed")
         logging.info(f"Found {len(lapsed)} existing lapsed issues.")
         
-        df = read_google_sheet(authenticate_google_sheets(), sheet)
+        df = read_google_sheet(authenticate_google_sheets(), filename, sheet)
         new_keys = create_jira_issues(df, lapsed)
         if new_keys:
             transition_jira_issues("Lapsed", new_keys)
@@ -582,16 +583,16 @@ def import_lapsed_clients(sheet): #? 3 requests per call (max 100 issues in stat
     except Exception as e:
         logging.error(f"Failed to import lapsed clients: {e}")
 
-def check_for_new_orders(sheet):
+def check_for_new_orders(filename, sheet):
     logging.info("Checking for new orders...")
     try:
         client = authenticate_google_sheets()
-        df = read_google_sheet(client, sheet)
+        df = read_google_sheet(client, filename, sheet)
 
         if df is not None and not df.empty:
             keys = create_jira_issues(df, [], check_date=False)
             transition_jira_issues("New Web Order", keys)
-            clear_google_sheet(client, sheet)
+            clear_google_sheet(client, filename, sheet)
         else:
             logging.info("No new orders found.")
     except Exception as e:
