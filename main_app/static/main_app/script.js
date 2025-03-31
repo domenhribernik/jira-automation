@@ -20,13 +20,13 @@ function updateTaskList(taskName, taskData) {
     const logContainer = document.getElementById("log");
     if (taskData.status) {
         const entryDiv = document.createElement("div");
-        entryDiv.id = `log_${taskName}`;
+        entryDiv.id = taskData.id;
         entryDiv.classList.add("log-entry");
         entryDiv.innerHTML = `<strong>${taskName}:</strong> ${JSON.stringify(taskData)}`;
         logContainer.appendChild(entryDiv);
     }
     else {
-        const entryDiv = document.getElementById(`log_${taskName}`);
+        const entryDiv = document.getElementById(taskData.id);
         if (entryDiv) entryDiv.remove();
     }
 }
@@ -172,8 +172,7 @@ function countdownToDate(name, data, element) {
             targetDate = (now + data.interval_value * unit);
             console.log("counted down");
             setTimeout(() => {
-                getSubTasks("email"); // Tranfer data to sub div
-                updateTaskList(name, data);
+                getSubTasks(name, 'email')
             }, 5000);
         } else {
             const days = Math.floor(distance / (1000 * 60 * 60 * 24));

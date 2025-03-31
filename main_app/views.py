@@ -58,8 +58,10 @@ def get_scheduled_tasks(request):
                 interval_value = None
                 interval_unit = None
 
-            task_status[job.name] = {
+            task_status[job.id] = {
                 "status": 1,  # 1 for active, 0 for inactive
+                "id": job.id,
+                "name": job.name,
                 "interval_value": interval_value,
                 "interval_unit": interval_unit,
                 "next_run": job.next_run_time.strftime("%Y-%m-%d %H:%M:%S") if job.next_run_time else None
@@ -127,6 +129,7 @@ def schedule_task(request, task_name):
         
         return JsonResponse({
             "status": True,
+            "id": job.id,
             "next_run": job.next_run_time.strftime("%Y-%m-%d %H:%M:%S"),
             "interval_value": value,
             "interval_unit": unit
@@ -142,6 +145,7 @@ def delete_scheduled_task(request, task_name):
             scheduler.remove_job(job.id)
             return JsonResponse({
                 "status": False,
+                "id": job.id,
                 "next_run:" : "Not scheduled"
             })
         else:

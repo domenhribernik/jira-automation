@@ -4,8 +4,8 @@ import pandas as pd
 
 # Google Sheets API Setup
 GOOGLE_SHEETS_CREDENTIALS_FILE = "credentials.json"  # Path to your downloaded JSON file
-GOOGLE_SHEET_NAME = "Jira Sales API"  # Name of the Google Sheet
-GOOGLE_SHEET_TAB_NAME = "Sheet1"  # Name of the tab in the Google Sheet
+GOOGLE_SHEET_NAME = "Lapsed"  # Name of the Google Sheet
+GOOGLE_SHEET_TAB_NAME = "Lapsed"  # Name of the tab in the Google Sheet
 
 # Authenticate with Google Sheets
 def authenticate_google_sheets():
@@ -29,10 +29,20 @@ def read_google_sheet(client):
     df = pd.DataFrame(data[1:], columns=data[0])  # First row as headers
     return df
 
+def list_sheets(client):
+    sheets = client.openall()
+    print("Sheets available to the service account:")
+    for sheet in sheets:
+        print(f"- {sheet.title}")
+
 # Main function
 def main():
+
+
     # Authenticate with Google Sheets
     client = authenticate_google_sheets()
+
+    list_sheets(client)
     
     # Read data from Google Sheets
     df = read_google_sheet(client)

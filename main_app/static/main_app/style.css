@@ -137,7 +137,7 @@ button.deactivate:hover {
 
 #log {
     max-width: 80%;
-    margin: 50px auto;
+    margin: 0px auto;
     font-family: monospace;
     font-size: 1rem;
 }

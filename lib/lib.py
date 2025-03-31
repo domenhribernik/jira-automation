@@ -21,7 +21,7 @@ JIRA_URL = "https://cwcyprus-sales.atlassian.net"
 JIRA_EMAIL = "webadmin@cwcyprus.com"
 JIRA_API_TOKEN = Path("JiraToken.txt").read_text().strip()
 JIRA_PROJECT_KEY = "SALES"
-DEFAULT_ASSIGNED_USER = "70121:bed40c39-1b16-4eff-a88c-809250e73b31"
+DEFAULT_ASSIGNED_USER = "712020:dbacf721-89ac-4684-bced-29f47fd04fc2"
 
 TRANSITIONS = {
     "lapsed": 2,
@@ -64,21 +64,25 @@ class InMemoryLogHandler(logging.Handler):
         return self.log_stream.getvalue()
 
 def setup_logging(log_file: str = "app.log"):
-    """Set up logging configuration."""
+    """Set up logging configuration with UTF-8 support."""
     log_dir = Path("logs")
     log_dir.mkdir(exist_ok=True)
     log_path = log_dir / log_file
 
+    in_memory_handler = InMemoryLogHandler()
+    
     logging.basicConfig(
-        level=logging.INFO,  # Log messages of level INFO and above
-        format="%(asctime)s: %(levelname)s %(message)s",  # Format
+        level=logging.INFO,
+        format="%(asctime)s: %(levelname)s %(message)s",
         handlers=[
-            logging.FileHandler(log_path),
-            logging.StreamHandler(),
-            in_memory_handler := InMemoryLogHandler(),
+            logging.FileHandler(log_path, encoding="utf-8"),
+            logging.StreamHandler(sys.stdout),
+            in_memory_handler,
         ],
     )
-    sys.stdout.reconfigure(encoding='utf-8')
+    
+    sys.stdout.reconfigure(encoding="utf-8")
+    
     print(f"Logging setup complete. Logs will be saved to: {log_path}")
     print("=========================")
     print("Starting the application...")
@@ -277,10 +281,7 @@ def create_jira_issues(df, existing_elements, check_date=True):
     for _, row in df.iterrows():
         if row['Name'] in existing_elements:
             continue
-        if check_date: #! Have to remove, we need to agree on fixed date format
-            last_date = datetime.strptime(row['Last Payment Date'], "%m/%d/%Y").strftime("%Y-%m-%d")
-        else:    
-            last_date = datetime.strptime(row['Last Payment Date'], "%d/%m/%Y").strftime("%Y-%m-%d")
+        last_date = datetime.strptime(row['Last Payment Date'], "%d/%m/%Y").strftime("%Y-%m-%d")
         days_diff = (date.today() - datetime.strptime(last_date, "%Y-%m-%d").date()).days
         if check_date and days_diff < 90:
             continue
@@ -317,7 +318,7 @@ def create_jira_issues(df, existing_elements, check_date=True):
         logging.info(f"Successfully created {len(keys)} issues: {keys}")
         return keys
     except requests.exceptions.RequestException as e:
-        print(f"Failed to create issue: {response.text}")
+        logging.error(f"Failed to create issue: {response.text}")
         return []
 
 def get_transitions(key):

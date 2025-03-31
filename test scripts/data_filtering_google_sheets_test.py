@@ -5,8 +5,8 @@ from datetime import date, datetime
 
 # Google Sheets API Setup
 GOOGLE_SHEETS_CREDENTIALS_FILE = "credentials.json"
-GOOGLE_SHEET_NAME = "Jira Sales API"
-GOOGLE_SHEET_TAB_NAME = "test" 
+GOOGLE_SHEET_NAME = "Lapsed"
+GOOGLE_SHEET_TAB_NAME = "Lapsed" 
 
 def authenticate_google_sheets():
     # Define the scope
@@ -37,10 +37,10 @@ def main():
         last_date = formate_date(row['Last Payment Date'])
         days_diff = (date.today() - datetime.strptime(last_date, "%Y-%m-%d").date()).days
         print(f"\nRow {index + 1}:")
-        print(f"Customer Name: {row['Name']}")
-        print(f"Last Transaction Amount: {row['Last Payment Amount']}")
+        print(f"Name: {row['Name']}")
+        print(f"Last Payment Amount: {row['Last Payment Amount']}")
         print(f"Email: {row['Email']}")
-        print(f"SMS: {row['Telephone 1']}")
+        print(f"Telephone 1: {row['Telephone 1']}")
         print(f"Today: {date.today()}")
         print(f"Last Payment Date: {last_date}")
         print(f"Days since last transaction: {days_diff}")
