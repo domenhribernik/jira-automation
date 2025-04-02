@@ -21,7 +21,6 @@ def main():
         args=[3, "In Progress"] #? 3 days delay
     )
     print_task_list()
-    check_for_new_orders("New Web Orders", "New Web Orders")
 
     while True:
         user_input = input("Enter a command (Tasks, Delete, Exit): \n").strip().lower()
