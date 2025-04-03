@@ -44,6 +44,8 @@ EMAIL_SENDER = "webadmin@cwcyprus.com"
 with open("GmailToken.txt", "r") as file:
     EMAIL_PASSWORD = file.read().strip()
 
+CALLS_BEFORE_BREAK = 20
+PAUSE_DURATION = 60 # seconds
 
 HEADERS = {
     "Accept": "application/json",
@@ -126,50 +128,63 @@ def clear_google_sheet(client, filename, sheet):
         logging.error(f"Failed to clear Google Sheet '{sheet}': {e}")
         raise
 
-def search_issues(status): #? Max 5000 issues with key and id params, pagination needed for more
+def search_issues(status): #? 100 issues per call with paging
     """Search for issues in Jira and return their IDs, keys, and summaries."""
     params = {
         "jql": f"project = 'SALES' AND status = '{status}'",
-        "fields": "id,key,summary",  #? Returned from specific issue search
+        "fields": "id,key,summary",
         "maxResults": 1000,
     }
-    
-    response = requests.get(f"{JIRA_URL}/rest/api/3/search/jql", params=params, headers=HEADERS)
+    issue_ids, issue_keys, issue_names = [], [], []
 
-    if response.ok:
-        issues = response.json().get("issues", [])
+    while True:
+        response = requests.get(f"{JIRA_URL}/rest/api/3/search/jql", params=params, headers=HEADERS)
 
-        issue_ids = [issue["id"] for issue in issues]
-        issue_keys = [issue["key"] for issue in issues]
-        issue_names = [issue["fields"]["summary"] for issue in issues]
+        if response.ok:
+            issues = response.json().get("issues", [])
 
-        return issue_ids, issue_keys, issue_names
-    else:
-        logging.error(f"Failed to search issues: {response.text} status: {response.status_code}")
-        return []
+            issue_ids.extend([issue["id"] for issue in issues])
+            issue_keys.extend([issue["key"] for issue in issues])
+            issue_names.extend([issue["fields"]["summary"] for issue in issues])
 
-def get_bulk_issues(issues): #TODO if needed find a way to get more than 100 issues (custom paging)
+            next_page_token = response.json().get("nextPageToken")
+            if not next_page_token:
+                break
+
+            params["nextPageToken"] = next_page_token
+            time.sleep(3)  #? Rate limit for Jira API
+
+        else:
+            logging.error(f"Failed to search issues: {response.text} status: {response.status_code}")
+            return []
+        
+    return issue_ids, issue_keys, issue_names
+
+def get_bulk_issues(issues): 
     """Get bulk issues from Jira and return their custom fields and assignees."""
     if issues == []:
         return []
-
-    payload = {
-        "fields": [ #? Fields to include in the response
-            "customfield_10082",
-            "assignee",
-        ],
-        "issueIdsOrKeys": issues
-    }
+    
     issues_data = {}
+    batches = [issues[i:i+100] for i in range(0, len(issues), 100)]
 
     try:
-        response = requests.post(f"{JIRA_URL}/rest/api/3/issue/bulkfetch", headers=HEADERS, json=payload)
-        for issue in response.json().get('issues', []):
-            issue_key = issue['key']
-            customfield_10082 = issue['fields'].get('customfield_10082')
-            assignee_account_id = issue['fields'].get('assignee', {}).get('accountId') if issue['fields'].get('assignee') else None
-            
-            issues_data[issue_key] = (customfield_10082, assignee_account_id)
+        for batch in batches:
+            payload = {
+                "fields": [ #? Fields to include in the response
+                    "customfield_10082",
+                    "assignee",
+                ],
+                "issueIdsOrKeys": batch
+            }
+            response = requests.post(f"{JIRA_URL}/rest/api/3/issue/bulkfetch", headers=HEADERS, json=payload)
+            for issue in response.json().get('issues', []):
+                issue_key = issue['key']
+                customfield_10082 = issue['fields'].get('customfield_10082')
+                assignee_account_id = issue['fields'].get('assignee', {}).get('accountId') if issue['fields'].get('assignee') else None
+                
+                issues_data[issue_key] = (customfield_10082, assignee_account_id)
+            time.sleep(3) #? Rate limit for each call
     except requests.exceptions.RequestException as e:
         logging.error(f"Failed to get bulk issues: {response.text} status: {response.status_code} error: {e}")
     return issues_data
@@ -182,9 +197,7 @@ def get_bulk_changelog(issues): #? Max 1000 transitions per page, for more pagin
     filtered_data = []
     payload = {
         "issueIdsOrKeys": issues,
-        "fieldIds": [
-            "status"
-        ],
+        "fieldIds": ["status"],
         "maxResults": 1000
     }
 
@@ -260,9 +273,10 @@ def get_bulk_changelog_paging(issues): #? Implemented paging in case of large da
                 break
 
             payload["nextPageToken"] = next_page_token
+            time.sleep(3)  #? Rate limit for Jira API
 
         else:
-            print(f"Failed to get bulk changelogs: {response.text} status: {response.status_code}")
+            logging.error(f"Failed to get bulk changelogs: {response.text} status: {response.status_code}")
             break
     
     # Return sorted transitions by date and merge duplicates
@@ -274,7 +288,8 @@ def get_bulk_changelog_paging(issues): #? Implemented paging in case of large da
         for issue_id, transitions in filtered_data.items()
     ]
 
-def filter_new_lapsed_clients(df, existing_elements, days):
+def filter_jira_issues(df, existing_elements, days):
+    """Filter Jira issues based on existing elements and days since last payment."""
     filtered = []
     
     for _, row in df.iterrows():
@@ -301,8 +316,6 @@ def create_jira_issues(df):
         phone = row['Telephone 1']
         email = row['Email']
 
-        # logging.info(f"Creating issue for customer: {customer_name}, Days since last transaction: {days_diff}")
-
         issue_payload = {
             "fields": {
                 "issuetype": {"id": 10001}, #? Lead hardcoded
@@ -319,14 +332,13 @@ def create_jira_issues(df):
         }
 
         bulk_issue_data["issueUpdates"].append(issue_payload)
-        print(len(bulk_issue_data["issueUpdates"]), end="\r")
 
     if bulk_issue_data["issueUpdates"] == []:
         return []
-    logging.info(f"Creating {len(bulk_issue_data['issueUpdates'])} issues...")
+
     try:
         response = requests.post(f"{JIRA_URL}/rest/api/3/issue/bulk", headers=HEADERS, json=bulk_issue_data)
-        logging.info(f"Response: {response.status_code} {response.text}")
+        logging.info(f"Creating {len(bulk_issue_data['issueUpdates'])} issues, Response: {response.status_code} {response.text}")
         keys = [issue["key"] for issue in response.json().get("issues", [])]
         logging.info(f"Successfully created {len(keys)} issues: {keys}")
         return keys
@@ -361,7 +373,7 @@ def transition_jira_issues(transition, keys): #? Max 1000 transitions
 
     try:
         response = requests.post(f"{JIRA_URL}/rest/api/3/bulk/issues/transition", json=transition_payload, headers=HEADERS) 
-        logging.info(f"Succesfully moved {len(keys)} issues: {keys} to '{transition}'")  
+        logging.info(f"Succesfully moved {len(keys)} issues to '{transition}'")  
     except requests.exceptions.RequestException as e:
         logging.error(f"Failed to transition issue: {response.text} status: {response.status_code} error: {e}")
 
@@ -411,7 +423,7 @@ def send_email_jira(key, message): #TODO Jira supports sending emails, can't get
     else:
         print(f"Failed to send email: {response.text}")
 
-def get_email_message(summary, issue_key): #TODO Add link to jira item
+def get_email_message(summary, issue_key):
     """Generate a Jira-style email notification."""
     issue_url = f"{JIRA_URL}/jira/core/projects/SALES/board?selectedIssue={issue_key}"
     return f"""
@@ -466,7 +478,7 @@ def get_email_message(summary, issue_key): #TODO Add link to jira item
         </html>
     """
 
-def schedule_emails_list(days_delay, status): #? 4 requests per call
+def schedule_emails_list(days_delay, status): 
     """"Schedule emails for issues in a specific status."""
     issues, keys, summarys  = search_issues(status)
     logging.info(f"Found {len(issues)} issues in {status}")
@@ -552,7 +564,7 @@ def schedule_emails_list(days_delay, status): #? 4 requests per call
     logging.info(f"Returned {issue_count} emails to be scheduled.")
     return scheduled_emails
 
-def schedule_emails(days_delay, status): #? 4 requests per call
+def schedule_emails(days_delay, status): #? 1 req per 100 existing + 3 requests per call
     """Schedule emails for issues in a specific status."""
     logging.info("Scheduling emails...")
     try:
@@ -580,7 +592,7 @@ def schedule_emails(days_delay, status): #? 4 requests per call
             logging.error(f"Failed to schedule email for issue {issue_key}: {e}")
             continue
 
-def import_lapsed_clients(filename, sheet): #? 3 requests per call (max 100 issues in status)
+def import_lapsed_clients(filename, sheet): #? 1 req per 100 existing, 2 req per 50 inserted, every 20 req 60 sec rate limiting
     """Import lapsed clients from a Google Sheet and transition them to status."""
     logging.info("Importing lapsed clients...")
 
@@ -589,42 +601,60 @@ def import_lapsed_clients(filename, sheet): #? 3 requests per call (max 100 issu
         logging.info(f"Found {len(lapsed)} existing lapsed issues.")
         
         df = read_google_sheet(authenticate_google_sheets(), filename, sheet)
-        filtered_df = filter_new_lapsed_clients(df, lapsed, 90)
+        filtered_df = filter_jira_issues(df, lapsed, 90)
         batches = [filtered_df[i:i + 50] for i in range(0, len(filtered_df), 50)]
 
-        for index, batch in enumerate(batches):
-            logging.info(f"Processing batch {index + 1}/{len(batches)}")
-            assert len(batch) <= 50, "Batch size exceeds 50 rows."
-            new_keys = create_jira_issues(batches)
-            if new_keys:
+        if lapsed != []:
+            total_api_calls = -(-len(lapsed) // 100)  # Divide and round up
+        else:
+            total_api_calls = 0
+        if df is not None and not df.empty:
+            for index, batch in enumerate(batches):
+                logging.info(f"Processing batch {index + 1}/{len(batches)}")
+                assert len(batch) <= 50, "Batch size exceeds 50 rows."
+                if total_api_calls % CALLS_BEFORE_BREAK == 0:
+                    logging.info(f"Rate limiting: Pausing for {PAUSE_DURATION} seconds.")
+                    time.sleep(PAUSE_DURATION)
+                new_keys = create_jira_issues(batch)
                 transition_jira_issues("Lapsed", new_keys)
-            else:
-                logging.info("No new issues to create.")
-            time.sleep(5) #? Rate limit for Jira API
+                total_api_calls += 2
+                time.sleep(5) #? Rate limit for each call
+        else:
+            logging.info("No new issues to create.")
     except Exception as e:
         logging.error(f"Failed to import lapsed clients: {e}")
 
-def check_for_new_orders(filename, sheet):
+def check_for_new_orders(filename, sheet): #? same as import_lapsed_clients
     """Check for new orders in a Google Sheet and transition them to status."""
     logging.info("Checking for new orders...")
     try:
         issues, keys, new_web_orders = search_issues("New Web Order")
-        logging.info(f"Found {len(new_web_orders)} existing lapsed issues.")
+        logging.info(f"Found {len(new_web_orders)} existing Web Orders issues.")
 
         client = authenticate_google_sheets()
         df = read_google_sheet(client, filename, sheet)
-        filtered_df = filter_new_lapsed_clients(df, new_web_orders, 0)
+        filtered_df = filter_jira_issues(df, new_web_orders, 0)
         batches = [filtered_df[i:i + 50] for i in range(0, len(filtered_df), 50)]
+
+        if new_web_orders != []:
+            total_api_calls = -(-len(new_web_orders) // 100)  # Divide and round up
+        else:
+            total_api_calls = 0
 
         if df is not None and not df.empty:
             for index, batch in enumerate(batches):
+                logging.info(f"Processing batch {index + 1}/{len(batches)}")
                 assert len(batch) >= 50, "Batch size exceeds 50 rows."
-                new_keys = create_jira_issues(batches)
+                if total_api_calls % CALLS_BEFORE_BREAK == 0:
+                    logging.info(f"Rate limiting: Pausing for {PAUSE_DURATION} seconds.")
+                    time.sleep(PAUSE_DURATION)
+                new_keys = create_jira_issues(batch)
                 transition_jira_issues("New Web Order", new_keys)
-                clear_google_sheet(client, filename, sheet)
+                total_api_calls += 2
+                time.sleep(5) #? Rate limit for each call
+            clear_google_sheet(client, filename, sheet)
         else:
             logging.info("No new orders found.")
-        time.sleep(5) #? Rate limit for Jira API
     except Exception as e:
         logging.error(f"Failed to check for new orders: {e}")
 

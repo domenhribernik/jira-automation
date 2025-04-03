@@ -6,13 +6,13 @@ def main():
         import_lapsed_clients,
         'interval',
         minutes=30,
-        args=["Jira Sales API", "Lapsed"]
+        args=["Lapsed", "Lapsed"]
     )
     scheduler.add_job(
         check_for_new_orders,
         'interval',
         minutes=40,
-        args=["Jira Sales API", "New Web Orders"]
+        args=["New Web Orders", "New Web Orders"]
     )
     scheduler.add_job(
         schedule_emails,
@@ -21,6 +21,9 @@ def main():
         args=[3, "In Progress"] #? 3 days delay
     )
     print_task_list()
+    issues, keys, summarys  = search_issues("Lapsed")
+    issues_data = get_bulk_issues(issues)
+    print(len(issues_data))
 
     while True:
         user_input = input("Enter a command (Tasks, Delete, Exit): \n").strip().lower()
