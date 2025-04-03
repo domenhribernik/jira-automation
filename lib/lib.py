@@ -130,8 +130,9 @@ def clear_google_sheet(client, filename, sheet):
 
 def search_issues(status): #? 100 issues per call with paging
     """Search for issues in Jira and return their IDs, keys, and summaries."""
+    status_query = " OR ".join([f"status = '{s}'" for s in status])
     params = {
-        "jql": f"project = 'SALES' AND status = '{status}'",
+        "jql": f"project = 'SALES' AND ({status_query})",
         "fields": "id,key,summary",
         "maxResults": 1000,
     }
@@ -480,7 +481,7 @@ def get_email_message(summary, issue_key):
 
 def schedule_emails_list(days_delay, status): #TODO Check if update needs paging update
     """"Schedule emails for issues in a specific status."""
-    issues, keys, summarys  = search_issues(status)
+    issues, keys, summarys  = search_issues([status])
     logging.info(f"Found {len(issues)} issues in {status}")
 
     changelogs = get_bulk_changelog(issues)
@@ -592,35 +593,39 @@ def schedule_emails(days_delay, status): #? 1 req per 100 existing + 3 requests 
             logging.error(f"Failed to schedule email for issue {issue_key}: {e}")
             continue
 
-def import_lapsed_clients(filename, sheet): #? 1 req per 100 existing, 2 req per 50 inserted, every 20 req 60 sec rate limiting
+def import_lapsed_clients(filename, sheet): #? 1 req per 100 existing (times 3 status), 2 req per 50 inserted, every 20 req 60 sec rate limiting, checks lapsed, in progress, and outcome
     """Import lapsed clients from a Google Sheet and transition them to status."""
     logging.info("Importing lapsed clients...")
 
     try:
-        issues, keys, lapsed = search_issues("Lapsed")
+        issues, keys, lapsed = search_issues(["Lapsed", "In Progress", "Outcome"])
         logging.info(f"Found {len(lapsed)} existing lapsed issues.")
         
         df = read_google_sheet(authenticate_google_sheets(), filename, sheet)
         filtered_df = filter_jira_issues(df, lapsed, 90)
         batches = [filtered_df[i:i + 50] for i in range(0, len(filtered_df), 50)]
 
+        if filtered_df.empty:
+            logging.info("No new lapsed clients found.")
+            return
+
         if lapsed != []:
             total_api_calls = -(-len(lapsed) // 100)  # Divide and round up
         else:
             total_api_calls = 0
-        if df is not None and not df.empty:
-            for index, batch in enumerate(batches):
-                logging.info(f"Processing batch {index + 1}/{len(batches)}")
-                assert len(batch) <= 50, "Batch size exceeds 50 rows."
-                if total_api_calls % CALLS_BEFORE_BREAK == 0:
-                    logging.info(f"Rate limiting: Pausing for {PAUSE_DURATION} seconds.")
-                    time.sleep(PAUSE_DURATION)
-                new_keys = create_jira_issues(batch)
-                transition_jira_issues("Lapsed", new_keys)
-                total_api_calls += 2
-                time.sleep(5) #? Rate limit for each call
-        else:
-            logging.info("No new issues to create.")
+
+        for index, batch in enumerate(batches):
+            logging.info(f"Processing batch {index + 1}/{len(batches)}")
+            assert len(batch) <= 50, "Batch size exceeds 50 rows."
+            if total_api_calls % CALLS_BEFORE_BREAK == 0:
+                logging.info(f"Rate limiting: Pausing for {PAUSE_DURATION} seconds.")
+                time.sleep(PAUSE_DURATION)
+            new_keys = create_jira_issues(batch)
+            logging.info(new_keys)
+            transition_jira_issues("Lapsed", new_keys)
+            total_api_calls += 2
+            time.sleep(5) #? Rate limit for each call
+
     except Exception as e:
         logging.error(f"Failed to import lapsed clients: {e}")
 
@@ -628,7 +633,7 @@ def check_for_new_orders(filename, sheet): #? same as import_lapsed_clients
     """Check for new orders in a Google Sheet and transition them to status."""
     logging.info("Checking for new orders...")
     try:
-        issues, keys, new_web_orders = search_issues("New Web Order")
+        issues, keys, new_web_orders = search_issues(["New Web Order"])
         logging.info(f"Found {len(new_web_orders)} existing Web Orders issues.")
 
         client = authenticate_google_sheets()
