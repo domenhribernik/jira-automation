@@ -478,7 +478,7 @@ def get_email_message(summary, issue_key):
         </html>
     """
 
-def schedule_emails_list(days_delay, status): 
+def schedule_emails_list(days_delay, status): #TODO Check if update needs paging update
     """"Schedule emails for issues in a specific status."""
     issues, keys, summarys  = search_issues(status)
     logging.info(f"Found {len(issues)} issues in {status}")
