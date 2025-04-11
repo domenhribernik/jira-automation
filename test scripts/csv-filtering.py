@@ -1,17 +1,35 @@
-import csv
+import re
+import pandas as pd
 
-def filter_missing_images(input_file, output_file):
-    with open(input_file, mode='r', newline='', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
-        filtered_rows = [row for row in reader if not row['Images'] and '-OS' not in row['Categories']]
+def sql_to_excel(sql_file, excel_file):
+    insert_pattern = re.compile(
+        r"INSERT INTO `?(?P<table>\w+)`?\s*\((?P<columns>[^)]+)\)\s*VALUES\s*(?P<values>.+);", 
+        re.IGNORECASE | re.DOTALL
+    )
+    
+    all_rows = []
+    columns = []
 
-    with open(output_file, mode='w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = filtered_rows[0].keys() if filtered_rows else []
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(filtered_rows)
+    with open(sql_file, 'r', encoding='utf-8') as f:
+        sql_content = f.read()
+
+    match = insert_pattern.search(sql_content)
+    if match:
+        columns = [col.strip('` ') for col in match.group("columns").split(',')]
+        values_raw = match.group("values")
+
+        # Match each value tuple
+        value_tuples = re.findall(r'\((.*?)\)', values_raw, re.DOTALL)
+        for value in value_tuples:
+            # Handle commas inside quotes correctly
+            parsed = [v.strip().strip("'") for v in re.split(r",(?=(?:[^']*'[^']*')*[^']*$)", value)]
+            all_rows.append(parsed)
+
+    # Create DataFrame and export to Excel
+    df = pd.DataFrame(all_rows, columns=columns)
+    df.to_excel(excel_file, index=False, engine='openpyxl')
 
 if __name__ == "__main__":
-    input_file = 'test scripts/input.csv'  # Replace with your input CSV file path
-    output_file = 'test scripts/output.csv'  # Replace with your desired output CSV file path
-    filter_missing_images(input_file, output_file)
+    sql_file = 'test scripts/zip.sql'  # Replace with your SQL file path
+    excel_file = 'test scripts/zip.xlsx'  # Replace with desired Excel file path
+    sql_to_excel(sql_file, excel_file)
