@@ -1,0 +1,35 @@
+credentials.json
+JiraToken.txt
+GmailToken.txt
+users.json
+logs/
+test scripts/
+
+# Ignore compiled Python files
+__pycache__/
+*.py[cod]
+
+# Ignore Django secret key file (if applicable)
+.env
+*.env
+
+# Ignore database files
+*.sqlite3
+db.sqlite3
+
+# Ignore virtual environment (if using venv)
+venv/
+env/
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+.DS_Store
+
+# Ignore system-generated files
+*.swp
+Thumbs.db
+
+# Ignore IDE-specific files
+.vscode/
+.idea/

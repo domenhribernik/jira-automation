@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Scheduler</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'main_app/style.css' %}">
+    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.ico' %}" >
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div>
+            <div class="scheduleContainer">
+                <h1>Schedule Tasks</h1>
+                <div id="taskSchedule">
+                </div>
+            </div>
+            <div id="log"></div>
+        </div>
+        <div>
+            <div class="taskContainer">
+                <h1>Run Task</h1>
+                <button class="activate" onclick="triggerTask('import_lapsed_clients')">Import Lapsed Clients</button>
+                <button class="activate" onclick="triggerTask('check_for_new_orders')">Check New Orders</button>
+                <button class="activate" onclick="triggerTask('schedule_emails')">Schedule Emails</button>
+                <button class="activate" onclick="triggerTask('print_task_list')">Print Task List</button>
+                <button class="activate" onclick="window.open('/logs/', '_blank')">Open Full Log</button>
+            </div>
+            <div id="response"></div>
+        </div>
+    </div>
+    <script src="{% static 'main_app/script.js' %}"></script>
+    <script>
+
+        function fetchTasks() {
+            fetch("/get-scheduled-tasks/")
+                .then(response => response.json())
+                .then(data => {
+                    const taskContainer = document.getElementById("taskSchedule");
+                    taskContainer.innerHTML = "";
+                    
+                    
+                    ALL_TASKS.forEach(taskName => {
+                        const taskData = data[`job_${taskName}`] || { status: false, next_run: "Not scheduled" };
+                        taskContainer.appendChild(createTaskElement(taskName, taskData));
+                    });
+
+                    console.log(data);
+                    
+                    getSubTasks('schedule_emails', "email");
+
+                    const logContainer = document.getElementById("log");
+                    logContainer.innerHTML = "";
+                    
+                    Object.entries(data).forEach(([taskId, taskData]) => {   // TODO Write a new get function in the middleware, where you can get the full task list. This should be handled by the backend. 
+                        const entryDiv = document.createElement("div");
+                        entryDiv.id = taskId;
+                        entryDiv.classList.add("log-entry");
+                        entryDiv.innerHTML = `<strong>${taskData.name}:</strong> ${JSON.stringify(taskData)}`;
+                        logContainer.appendChild(entryDiv);
+                    });
+                })
+                .catch(error => console.error("Error fetching task statuses:", error));
+        }
+
+        function getSubTasks(taskName, category) {
+            fetch(`/get-sub-tasks/${category}/`)
+                .then(response => response.json())
+                .then(data => {
+                    const subTaskContainer = document.querySelector(`.taskScheduleItem[data-task-name="${taskName}"] .subTaskContainer`);
+                    if (Object.entries(data).length === 0) return;
+                    const fragment = document.createDocumentFragment();
+                    Object.entries(data).forEach(([subTaskName, subTaskData]) => {
+                        fragment.appendChild(createSubTaskElement(subTaskName, subTaskData, subTaskContainer));
+                    });
+                    subTaskContainer.appendChild(fragment);
+                })
+                .catch(error => console.error("Error fetching sub-tasks:", error));
+        }
+
+        function triggerTask(taskName) {
+            fetch(`/run-task/${taskName}/`, { 
+                method: "POST", 
+                headers: { "X-CSRFToken": "{{ csrf_token }}" }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("response").innerHTML = data.logs.map(log => `<div>${log}</div>`).join('');
+                document.getElementById("response").scrollTop = document.getElementById("response").scrollHeight;
+            })
+            .catch(error => {
+                document.getElementById("response").innerText = "Error running task.";
+            });
+        }
+
+        function scheduleTask(taskName) {
+            const value = document.querySelector(`.taskScheduleItem[data-task-name="${taskName}"] .intervalValue`).value;
+            const unit = document.querySelector(`.taskScheduleItem[data-task-name="${taskName}"] #intervalUnit`).value;
+            console.log(unit, value);
+            
+            fetch(`/schedule-task/${taskName}/`, {
+                method: "POST",
+                headers: { "X-CSRFToken": "{{ csrf_token }}" },
+                body: JSON.stringify({ interval_value: value, interval_unit: unit })
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateTaskElement(taskName, data);
+                updateTaskList(taskName, data);
+            })
+            .catch(error => console.error(error));
+        }
+
+        function deleteScheduledTask(taskName) {
+            fetch(`/delete-scheduled-task/${taskName}/`, { 
+                method: "POST", 
+                headers: { "X-CSRFToken": "{{ csrf_token }}" } 
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateTaskElement(taskName, data);
+                updateTaskList(taskName, data);
+                taskIntervals[taskName] && clearInterval(taskIntervals[taskName]);
+            }) 
+            .catch(error => console.error(error));
+        }
+    </script>
+</body>
+</html>

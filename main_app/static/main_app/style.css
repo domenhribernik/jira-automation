@@ -1,0 +1,186 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    display: grid;
+    grid-template-columns: 65% 35%;
+    margin: 0 30px;
+}
+
+
+h1 {
+    color: #333;
+    font-size: 24px;
+}
+
+button {
+    display: block;
+    width: 80%;
+    margin: 10px auto;
+    padding: 12px;
+    font-size: 18px;
+    color: white;
+    background: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+button.deactivate {
+    background: #dc3545;
+}
+
+button.deactivate:hover {
+    background: #c82333;
+}
+
+.taskContainer, .scheduleContainer {
+    max-width: 80%;
+    margin: 50px auto;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.scheduleContainer {
+    max-width: 85%;
+}
+
+/*? Task Scheduling */
+.taskScheduleItem {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto;
+    width: 100%;
+    align-items: center;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.taskScheduleItem label {
+    font-weight: bold;
+    text-align: left;
+    padding: 0 5px;
+}
+
+.intervalInput span, .intervalInput input {
+    display: inline-block;
+}
+
+.intervalInput input {
+    width: 30px;
+}
+
+.taskScheduleItem .status {
+    margin: 0 auto;
+    width: 100px;
+    color: red;
+    font-weight: bold;
+    font-family: monospace;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.taskScheduleItem .status.active {
+    color: green;
+}
+
+.taskScheduleItem .countdown {
+    margin-left: 10px;
+    font-family: monospace;
+}
+
+.expand-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: gray;
+    transition: transform 0.3s ease-in-out;
+}
+
+.expand-btn i {
+    margin-right: 15px;
+}
+
+.expand-btn:hover {
+    background: none;
+}
+
+.subTaskContainer {
+    display: none;
+    grid-column: 1 / -1;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 5px;
+    margin-top: 5px;
+}
+
+.subTaskContainer.visible {
+    display: block;
+}
+
+.expand-btn.open .arrow {
+    transform: rotate(180deg);
+}
+
+#log {
+    max-width: 80%;
+    margin: 0px auto;
+    font-family: monospace;
+    font-size: 1rem;
+}
+
+/*? Sub Task Item */
+.subTaskItem {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1fr;
+    justify-content: space-evenly;
+    align-items: center;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #f9f9f9;
+    margin: 5px 10px 0;
+    padding: 0 25px;
+}
+
+
+/*? Task Buttons */
+#response {
+    max-width: 600px;
+    max-height: 45vh;
+    overflow-y: scroll;
+    margin: 0 auto;
+}
+
+#response div {
+    font-family: monospace;
+    white-space: pre-wrap;
+    margin: 5px 0;
+    padding: 5px;
+    background-color: #f4f4f4;
+    border: 1px solid #ccc;
+}
+
+@media (max-width: 1100px) {
+    .container {
+        grid-template-columns: 1fr;
+        margin: 0;
+    }
+
+    .taskContainer, .scheduleContainer {
+        max-width: 90vw;
+        margin: 30px auto;
+    }
+}

@@ -1,0 +1,7 @@
+requests
+datetime
+gspread
+oauth2client
+pandas
+apscheduler
+django
