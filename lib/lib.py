@@ -1,10 +1,12 @@
-import os
 import sys
 import json
 import base64
 from datetime import date, datetime, timedelta
 from typing import Tuple, List
 import time
+import os
+from dotenv import load_dotenv
+from pathlib import Path
 import requests
 import gspread
 import logging
@@ -17,11 +19,13 @@ from email.mime.multipart import MIMEMultipart
 import pandas as pd
 from lib.scheduler import scheduler
 
-JIRA_URL = "https://cwcyprus-sales.atlassian.net"
-JIRA_EMAIL = "webadmin@cwcyprus.com"
-JIRA_API_TOKEN = Path("JiraToken.txt").read_text().strip()
-JIRA_PROJECT_KEY = "SALES"
-DEFAULT_ASSIGNED_USER = "712020:dbacf721-89ac-4684-bced-29f47fd04fc2"
+load_dotenv(dotenv_path=Path(".env"))
+
+JIRA_URL = os.getenv("JIRA_URL")
+JIRA_EMAIL = os.getenv("JIRA_EMAIL")
+JIRA_API_TOKEN = os.getenv("JIRA_API_TOKEN")
+JIRA_PROJECT_KEY = os.getenv("JIRA_PROJECT_KEY")
+DEFAULT_ASSIGNED_USER = os.getenv("DEFAULT_ASSIGNED_USER")
 
 TRANSITIONS = {
     "lapsed": 2,
@@ -38,11 +42,10 @@ auth = base64.b64encode(f"{JIRA_EMAIL}:{JIRA_API_TOKEN}".encode()).decode()
 
 GOOGLE_SHEETS_CREDENTIALS_FILE = "credentials.json"
 
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
-EMAIL_SENDER = "webadmin@cwcyprus.com"
-with open("GmailToken.txt", "r") as file:
-    EMAIL_PASSWORD = file.read().strip()
+SMTP_SERVER = os.getenv("SMTP_SERVER")
+SMTP_PORT = int(os.getenv("SMTP_PORT"))
+EMAIL_SENDER = os.getenv("EMAIL_SENDER")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
 CALLS_BEFORE_BREAK = 20
 PAUSE_DURATION = 60 # seconds

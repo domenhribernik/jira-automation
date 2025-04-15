@@ -46,8 +46,6 @@
                         const taskData = data[`job_${taskName}`] || { status: false, next_run: "Not scheduled" };
                         taskContainer.appendChild(createTaskElement(taskName, taskData));
                     });
-
-                    console.log(data);
                     
                     getSubTasks('schedule_emails', "email");
 
@@ -98,7 +96,6 @@
         function scheduleTask(taskName) {
             const value = document.querySelector(`.taskScheduleItem[data-task-name="${taskName}"] .intervalValue`).value;
             const unit = document.querySelector(`.taskScheduleItem[data-task-name="${taskName}"] #intervalUnit`).value;
-            console.log(unit, value);
             
             fetch(`/schedule-task/${taskName}/`, {
                 method: "POST",

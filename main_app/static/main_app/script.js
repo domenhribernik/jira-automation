@@ -170,7 +170,6 @@ function countdownToDate(name, data, element) {
 
         if (distance <= 0) {
             targetDate = (now + data.interval_value * unit);
-            console.log("counted down");
             setTimeout(() => {
                 getSubTasks(name, 'email')
             }, 5000);
