@@ -4,6 +4,7 @@ GmailToken.txt
 users.json
 logs/
 test scripts/
+staticfiles/
 
 # Ignore compiled Python files
 __pycache__/
