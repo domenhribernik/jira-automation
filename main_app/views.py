@@ -169,25 +169,25 @@ def schedule_task(request, task_name):
 
 def delete_scheduled_task(request, task_name):
     if request.method == "POST":
-        job = scheduler.get_job(task_name)
+        job = scheduler.get_job(task_name) or scheduler.get_job(f"job_{task_name}")
         if not job:
-            job = scheduler.get_job(f"job_{task_name}")
-        if job:
-            scheduler.remove_job(job.id)
-            try:
-                task = ScheduledTask.objects.get(name=task_name)
-                task.delete()
-                return JsonResponse({
-                    "status": False,
-                    "id": job.id,
-                    "next_run:" : "Not scheduled"
-                })
-            except ScheduledTask.DoesNotExist:
-                return JsonResponse({"message": "Failed to delete from db"}, status=400)
-        else:
+            logging.info("Available jobs at time of deletion:")
+            for j in scheduler.get_jobs():
+                logging.info(j.id)
             return JsonResponse({
                 "error": f"Job '{task_name}' not found"
             }, status=404)
+        scheduler.remove_job(job.id)
+        try:
+            task = ScheduledTask.objects.get(name=task_name)
+            task.delete()
+            return JsonResponse({
+                "status": False,
+                "id": job.id,
+                "next_run:" : "Not scheduled"
+            })
+        except ScheduledTask.DoesNotExist:
+            return JsonResponse({"message": "Failed to delete from db"}, status=400)
         
     return JsonResponse({"message": "Invalid request"}, status=400)
 
