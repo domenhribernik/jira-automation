@@ -41,7 +41,6 @@
                     const taskContainer = document.getElementById("taskSchedule");
                     taskContainer.innerHTML = "";
                     
-                    
                     ALL_TASKS.forEach(taskName => {
                         const taskData = data[`job_${taskName}`] || { status: false, next_run: "Not scheduled" };
                         taskContainer.appendChild(createTaskElement(taskName, taskData));

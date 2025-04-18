@@ -1,6 +1,7 @@
 from apscheduler.triggers.interval import IntervalTrigger
 from django.shortcuts import render
 from django.http import JsonResponse
+from .models import ScheduledTask
 from lib.lib import *
 
 in_memory_handler = setup_logging()
@@ -33,7 +34,7 @@ def run_task(request, task_name):
         })
     return JsonResponse({"message": "Invalid request"}, status=400)
 
-def get_scheduled_tasks(request):
+def get_scheduled_tasks_from_memory(request):
     if request.method == "GET":
         jobs = scheduler.get_jobs()
         task_status = {}
@@ -70,6 +71,22 @@ def get_scheduled_tasks(request):
     return JsonResponse(task_status)
 
 
+def get_scheduled_tasks(request):
+    data = {}
+    if request.method == "GET":
+        tasks = ScheduledTask.objects.all()
+
+        for task in tasks:
+            data[task.task_id] = {
+                "name": task.name,
+                "status": bool(task.status),
+                "interval": f"{task.interval_value} {task.interval_unit}",
+                "next_run": task.next_run.strftime("%Y-%m-%d %H:%M:%S") if task.next_run else "Not scheduled"
+            }
+
+    return JsonResponse(data)
+
+
 def get_sub_tasks(request, category): #TODO if app reboots the scheduled emails are lost
     if request.method == "GET":
         jobs = scheduler.get_jobs()
@@ -86,6 +103,7 @@ def get_sub_tasks(request, category): #TODO if app reboots the scheduled emails 
             }
         logging.info(f"Task list: {task_list}")
     return JsonResponse(task_list)
+
 
 def schedule_task(request, task_name):
     if request.method == "POST":
@@ -127,14 +145,27 @@ def schedule_task(request, task_name):
         else:
             return JsonResponse({"message": "Invalid task name"}, status=400)
         
+        # Create or update the scheduled task in DB
+        task, created = ScheduledTask.objects.update_or_create(
+            task_id=f"job_{task_name}",
+            defaults={
+                'status': 1,
+                'name': task_name,
+                'next_run': job.next_run_time.strftime("%Y-%m-%d %H:%M:%S"),
+                'interval_value': value,
+                'interval_unit': unit,
+            }
+        )
+        
         return JsonResponse({
-            "status": True,
-            "id": job.id,
-            "next_run": job.next_run_time.strftime("%Y-%m-%d %H:%M:%S"),
-            "interval_value": value,
-            "interval_unit": unit
+            'status': True,
+            'id': job.id,
+            'next_run': job.next_run_time.strftime("%Y-%m-%d %H:%M:%S"),
+            'interval_value': value,
+            'interval_unit': unit
         })
     return JsonResponse({"message": "Invalid request"}, status=400)
+
 
 def delete_scheduled_task(request, task_name):
     if request.method == "POST":
@@ -143,17 +174,23 @@ def delete_scheduled_task(request, task_name):
             job = scheduler.get_job(f"job_{task_name}")
         if job:
             scheduler.remove_job(job.id)
-            return JsonResponse({
-                "status": False,
-                "id": job.id,
-                "next_run:" : "Not scheduled"
-            })
+            try:
+                task = ScheduledTask.objects.get(name=task_name)
+                task.delete()
+                return JsonResponse({
+                    "status": False,
+                    "id": job.id,
+                    "next_run:" : "Not scheduled"
+                })
+            except ScheduledTask.DoesNotExist:
+                return JsonResponse({"message": "Failed to delete from db"}, status=400)
         else:
             return JsonResponse({
                 "error": f"Job '{task_name}' not found"
             }, status=404)
         
     return JsonResponse({"message": "Invalid request"}, status=400)
+
 
 def view_logs(request):
     try:
