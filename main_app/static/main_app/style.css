@@ -3,6 +3,7 @@ body {
     background-color: #f4f4f4;
     margin: 0;
     padding: 0;
+    width: 100%;
 }
 
 .container {
@@ -179,8 +180,52 @@ button.deactivate:hover {
         margin: 0;
     }
 
+   
     .taskContainer, .scheduleContainer {
         max-width: 90vw;
         margin: 30px auto;
+    }
+}
+
+
+@media (max-width: 700px) {
+    .taskScheduleItem {
+        padding: 10px;
+        width: 95%;
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-areas:
+            "status name button"
+            "interval next-run drop-down";
+    }
+
+    .taskScheduleItem> :nth-child(1) {
+        grid-area: status;
+    }
+
+    .taskScheduleItem> :nth-child(2) {
+        grid-area: name;
+    }
+
+    .taskScheduleItem> :nth-child(3) {
+        grid-area: interval;
+    }
+
+    .taskScheduleItem> :nth-child(4) {
+        grid-area: next-run;
+    }
+
+    .taskScheduleItem> :nth-child(5) {
+        grid-area: button;
+        min-width: 100px;
+    }
+
+    .taskScheduleItem> :nth-child(6) {
+        grid-area: drop-down;
+    }
+
+    .taskContainer,
+    .scheduleContainer {
+        max-width: 90%;
+        margin: 30px 5px;
     }
 }
