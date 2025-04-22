@@ -103,7 +103,7 @@ def schedule_task(request, task_name):
                 import_lapsed_clients,
                 'interval',
                  **interval_args,
-                args=["New Web Orders", "Lapsed"],
+                args=["Lapsed", "Lapsed"],
                 id=f"job_{task_name}",
                 replace_existing=True
             )
@@ -158,7 +158,7 @@ def delete_scheduled_task(request, task_name):
 
 def view_logs(request):
     try:
-        with open("Logs/app.log", "r") as log_file:
+        with open("logs/app.log", "r") as log_file:
             log_content = log_file.read()
     except FileNotFoundError:
         log_content = "No logs available."

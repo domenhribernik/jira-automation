@@ -136,7 +136,7 @@ button.deactivate:hover {
     transform: rotate(180deg);
 }
 
-#log {
+#taskList {
     max-width: 80%;
     margin: 0px auto;
     font-family: monospace;

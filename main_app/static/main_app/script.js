@@ -17,7 +17,7 @@ function toggleSubTasks(expandButton, subTaskContainer) {
 }
 
 function updateTaskList(taskName, taskData) {
-    const logContainer = document.getElementById("log");
+    const logContainer = document.getElementById("taskList");
     if (taskData.status) {
         const entryDiv = document.createElement("div");
         entryDiv.id = taskData.id;
@@ -80,7 +80,7 @@ function createTaskElement(taskName, taskData) {
 
     const subTaskContainer = document.createElement("div");
     subTaskContainer.classList.add("subTaskContainer", "hidden");
-    subTaskContainer.innerHTML = "<p>Temporary list of sub-tasks</p>";
+    subTaskContainer.innerHTML = "<p>No scheduled tasks</p>";
 
     taskItem.appendChild(statusSpan);
     taskItem.appendChild(label);
@@ -91,35 +91,6 @@ function createTaskElement(taskName, taskData) {
     taskItem.appendChild(subTaskContainer);
 
     return taskItem;
-}
-
-function createSubTaskElement(subTaskName, subTaskData, subTaskContainer) {
-    subTaskContainer.innerHTML = "";
-    const subTaskItem = document.createElement("div");
-    subTaskItem.classList.add("subTaskItem");
-    subTaskItem.setAttribute("data-sub-task-name", subTaskName);
-
-    // Sub-task name label
-    const label = document.createElement("label");
-    label.innerText = subTaskName.replace(/^email_/, "");
-
-    // Countdown timer span
-    const countdownSpan = document.createElement("span");
-    countdownSpan.classList.add("countdown");
-    countdownToDate(subTaskName, subTaskData, countdownSpan);
-
-    // Delete button
-    const deleteButton = document.createElement("button");
-    deleteButton.classList.add("delete-btn");
-    deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>'; // FontAwesome trash icon
-    deleteButton.onclick = () => deleteScheduledTask(subTaskData.id);
-
-    // Append elements
-    subTaskItem.appendChild(label);
-    subTaskItem.appendChild(countdownSpan);
-    subTaskItem.appendChild(deleteButton);
-
-    return subTaskItem;
 }
 
 function updateTaskElement(taskName, taskData) {
@@ -156,6 +127,47 @@ function updateTaskElement(taskName, taskData) {
     };
 }
 
+function createSubTaskElement(subTaskName, subTaskData, subTaskContainer) {
+    subTaskContainer.innerHTML = "";
+    const subTaskItem = document.createElement("div");
+    subTaskItem.classList.add("subTaskItem");
+    subTaskItem.setAttribute("data-sub-task-name", subTaskName);
+
+    // Sub-task name label
+    const label = document.createElement("label");
+    label.innerText = subTaskName.replace(/^email_/, "");
+
+    // Countdown timer span
+    const countdownSpan = document.createElement("span");
+    countdownSpan.classList.add("countdown");
+    countdownToDate(subTaskName, subTaskData, countdownSpan);
+
+    // Delete button
+    const deleteButton = document.createElement("button");
+    deleteButton.classList.add("delete-btn");
+    deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>'; // FontAwesome trash icon
+    deleteButton.onclick = () => deleteScheduledTask(subTaskData.id);
+
+    // Append elements
+    subTaskItem.appendChild(label);
+    subTaskItem.appendChild(countdownSpan);
+    subTaskItem.appendChild(deleteButton);
+
+    return subTaskItem;
+}
+
+function deleteSubTaskElement(subTaskName, subTaskContainer) {
+    const elementToRemove = subTaskContainer.querySelector(`[data-sub-task-name="${subTaskName}"]`);
+    
+    if (elementToRemove) {
+        elementToRemove.remove();
+    }
+    
+    if (subTaskContainer.children.length === 0) {
+        subTaskContainer.innerHTML = "<p>No scheduled tasks</p>";
+    }
+}
+
 function countdownToDate(name, data, element) {
     let targetDate = new Date(data.next_run).getTime();
 
@@ -170,9 +182,6 @@ function countdownToDate(name, data, element) {
 
         if (distance <= 0) {
             targetDate = (now + data.interval_value * unit);
-            setTimeout(() => {
-                getSubTasks(name, 'email')
-            }, 5000);
         } else {
             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
             const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));

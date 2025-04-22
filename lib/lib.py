@@ -591,7 +591,7 @@ def schedule_emails(days_delay, status): #? 1 req per 100 existing + 3 requests 
                 'date',
                 run_date=run_date,
                 args=[subject, message, email_receiver],
-                id=f"email_{issue_key}",
+                id=f"subtask_email_{issue_key}",
                 replace_existing=True
             )
             print(f"✉️  Email scheduled for issue {issue_key} for {email_receiver} in {send_email_delay} seconds.")
@@ -655,7 +655,8 @@ def check_for_new_orders(filename, sheet): #? same as import_lapsed_clients
         if df is not None and not df.empty:
             for index, batch in enumerate(batches):
                 logging.info(f"Processing batch {index + 1}/{len(batches)}")
-                assert len(batch) >= 50, "Batch size exceeds 50 rows."
+                logging.info(f"Batch size: {len(batch)}")   
+                assert len(batch) <= 50, "Batch size exceeds 50 rows."
                 if total_api_calls % CALLS_BEFORE_BREAK == 0:
                     logging.info(f"Rate limiting: Pausing for {PAUSE_DURATION} seconds.")
                     time.sleep(PAUSE_DURATION)
