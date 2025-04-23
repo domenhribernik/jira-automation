@@ -490,7 +490,7 @@ def schedule_emails_list(days_delay, status): #? Max 1000 issues with 200 distin
     changelogs = get_bulk_changelog(issues)
     issues_data = get_bulk_issues(issues)
     today_timestamp = int(datetime.now().timestamp())
-    send_email_time = 0
+    send_email_time = 10
     scheduled_emails = []
     issues_to_update = []
     issue_count = len(issues)
@@ -518,7 +518,6 @@ def schedule_emails_list(days_delay, status): #? Max 1000 issues with 200 distin
             days, remainder = divmod(time_diff_seconds, 86400)
             if days < days_delay:
                 send_email_time = 3*24*60*60 - time_diff_seconds
-
             assignee_id = issues_data.get(key, (None, None))[1]
             email_receiver = USERS.get(assignee_id) if assignee_id else None
             if not email_receiver:
@@ -582,6 +581,7 @@ def schedule_emails(days_delay, status): #? 1 req per 100 existing + 3 requests 
     for issue_key, subject, message, email_receiver, send_email_delay in emails_to_send:
         try:
             run_date = datetime.now() + timedelta(seconds=send_email_delay)
+            logging.info(f"Email delay is {send_email_delay} seconds.")
             logging.info(f"Email will be sent on {run_date}")
             if email_receiver is None:
                 logging.warning(f"Email for issue {issue_key} has no receiver (label was still added).")
@@ -654,8 +654,7 @@ def check_for_new_orders(filename, sheet): #? same as import_lapsed_clients
 
         if df is not None and not df.empty:
             for index, batch in enumerate(batches):
-                logging.info(f"Processing batch {index + 1}/{len(batches)}")
-                logging.info(f"Batch size: {len(batch)}")   
+                logging.info(f"Processing batch {index + 1}/{len(batches)}")  
                 assert len(batch) <= 50, "Batch size exceeds 50 rows."
                 if total_api_calls % CALLS_BEFORE_BREAK == 0:
                     logging.info(f"Rate limiting: Pausing for {PAUSE_DURATION} seconds.")
