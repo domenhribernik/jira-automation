@@ -158,9 +158,16 @@ def delete_scheduled_task(request, task_name):
 
 def view_logs(request):
     try:
-        with open("logs/app.log", "r") as log_file:
+        with open("logs/app.log", "r", encoding="utf-8") as log_file:
             log_content = log_file.read()
     except FileNotFoundError:
         log_content = "No logs available."
+    except UnicodeDecodeError:
+        # Fallback if UTF-8 fails
+        try:
+            with open("logs/app.log", "r", encoding="latin-1") as log_file:
+                log_content = log_file.read()
+        except Exception as e:
+            log_content = f"Error reading log file: {str(e)}"
 
     return render(request, "main_app/logs.html", {"log_content": log_content})
