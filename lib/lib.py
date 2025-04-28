@@ -17,6 +17,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import pandas as pd
+import numpy as np
 from lib.scheduler import scheduler
 
 load_dotenv(dotenv_path=Path(".env"))
@@ -106,6 +107,80 @@ def authenticate_google_sheets():
     except Exception as e:
         logging.error(f"Failed to authenticate Google Sheets: {e}")
         raise
+
+def import_file_to_google_sheets(file_path, spreadsheet_name, expected_columns=None, sheet_name=None):
+    try:
+        if sheet_name is None:
+            sheet_name = spreadsheet_name
+            
+        if not os.path.exists(file_path):
+            return False, f"File not found: {file_path}"
+            
+        _, file_extension = os.path.splitext(file_path)
+        file_extension = file_extension.lower()
+        
+        logging.info(f"Reading {file_extension} file: {file_path}")
+        
+        if file_extension == '.xlsx':
+            df = pd.read_excel(file_path)
+        elif file_extension == '.csv':
+            df = pd.read_csv(file_path)
+        else:
+            return False, f"Unsupported file type: {file_extension}. Only .xlsx and .csv are supported."
+        
+        if df.empty:
+            return False, "The file contains no data"
+            
+        if expected_columns:
+            if list(df.columns) != expected_columns:
+                return False, f"Column names do not match expected format. Expected: {expected_columns}, Found: {list(df.columns)}"
+                
+        df = df.replace({np.nan: '', pd.NA: '', None: ''})
+
+        client = authenticate_google_sheets()
+        
+        try:
+            spreadsheet = client.open(spreadsheet_name)
+            logging.info(f"Opened spreadsheet: {spreadsheet_name}")
+        except gspread.exceptions.SpreadsheetNotFound:
+            return False, f"Spreadsheet '{spreadsheet_name}' not found."
+            
+        try:
+            worksheet = spreadsheet.worksheet(sheet_name)
+            logging.info(f"Found existing worksheet: {sheet_name}")
+        except Exception as e:
+            logging.error(f"Failed to find worksheet: {str(e)}")
+            raise
+        
+        # Convert DataFrame to list of lists for uploading
+        # Ensure all values are properly converted to strings to avoid JSON issues
+        headers = df.columns.tolist()
+        data_rows = []
+        for _, row in df.iterrows():
+            processed_row = []
+            for val in row:
+                if pd.isna(val) or val is None:
+                    processed_row.append("")
+                elif isinstance(val, (np.floating, float)) and np.isnan(val):
+                    processed_row.append("")
+                elif isinstance(val, (pd.Timestamp, np.datetime64)):
+                    processed_row.append(pd.to_datetime(val).strftime('%Y-%m-%d %H:%M:%S'))
+                else:
+                    processed_row.append(str(val))
+            data_rows.append(processed_row)
+        
+        data_to_upload = [headers] + data_rows
+        
+        worksheet.clear()
+        logging.info(f"Uploading {len(df)} rows of data...")
+        worksheet.update(data_to_upload)
+        
+        logging.info(f"Successfully imported data to Google Sheets: {spreadsheet_name}")
+        return True, "Data imported successfully."
+        
+    except Exception as e:
+        logging.error(f"Error importing data to Google Sheets: {str(e)}")
+        return False, f"Error importing data to Google Sheets: {str(e)}"
 
 def read_google_sheet(client, filename, sheet):
     """Read a Google Sheet and return it as a pandas DataFrame."""
@@ -623,7 +698,7 @@ def import_lapsed_clients(filename, sheet): #? 1 req per 100 existing (times 3 s
         for index, batch in enumerate(batches):
             logging.info(f"Processing batch {index + 1}/{len(batches)}")
             assert len(batch) <= 50, "Batch size exceeds 50 rows."
-            if total_api_calls % CALLS_BEFORE_BREAK == 0:
+            if total_api_calls % CALLS_BEFORE_BREAK == 0 and total_api_calls != 0:
                 logging.info(f"Rate limiting: Pausing for {PAUSE_DURATION} seconds.")
                 time.sleep(PAUSE_DURATION)
             new_keys = create_jira_issues(batch)
@@ -656,7 +731,7 @@ def check_for_new_orders(filename, sheet): #? same as import_lapsed_clients
             for index, batch in enumerate(batches):
                 logging.info(f"Processing batch {index + 1}/{len(batches)}")  
                 assert len(batch) <= 50, "Batch size exceeds 50 rows."
-                if total_api_calls % CALLS_BEFORE_BREAK == 0:
+                if total_api_calls % CALLS_BEFORE_BREAK == 0 and total_api_calls != 0:
                     logging.info(f"Rate limiting: Pausing for {PAUSE_DURATION} seconds.")
                     time.sleep(PAUSE_DURATION)
                 new_keys = create_jira_issues(batch)

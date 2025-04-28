@@ -44,7 +44,7 @@ button.deactivate:hover {
     background: #c82333;
 }
 
-.taskContainer, .scheduleContainer {
+.taskContainer, .scheduleContainer, .dataImport {
     max-width: 80%;
     margin: 50px auto;
     background: white;
@@ -156,6 +156,61 @@ button.deactivate:hover {
     padding: 0 25px;
 }
 
+/*? Import data */
+.dataImport .form-group {
+    margin-bottom: 20px;
+}
+
+.dataImport .form-group > label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+
+.dataImport input[type="file"] {
+    width: 95%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fafafa;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.sheetname {
+    margin-top: 20px;
+}
+
+.radio-options {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.radio-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.radio-item:hover {
+    background-color: #e9ecef;
+    border-color: #007bff;
+}
+
+.radio-item input[type="radio"] {
+    accent-color: #007bff;
+    width: 18px;
+    height: 18px;
+}
+
 
 /*? Task Buttons */
 #response {
@@ -181,7 +236,7 @@ button.deactivate:hover {
     }
 
    
-    .taskContainer, .scheduleContainer {
+    .taskContainer, .scheduleContainer, .dataImport {
         max-width: 90vw;
         margin: 30px auto;
     }
@@ -224,7 +279,7 @@ button.deactivate:hover {
     }
 
     .taskContainer,
-    .scheduleContainer {
+    .scheduleContainer, .dataImport {
         max-width: 90%;
         margin: 30px 5px;
     }

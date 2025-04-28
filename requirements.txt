@@ -1,6 +1,7 @@
 requests
 dotenv
 datetime
+numpy
 gspread
 oauth2client
 pandas

@@ -1,13 +1,54 @@
 from apscheduler.triggers.interval import IntervalTrigger
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import tempfile
 from lib.lib import *
 
 in_memory_handler = setup_logging()
 NEWLY_SCHEDULED_TASKS = []
-# Create your views here.
+
 def home(request):
     return render(request, 'main_app/index.html')
+
+@csrf_exempt
+def import_data(request):
+    if request.method == 'POST':
+        file = request.FILES.get('file')
+        if not file:
+            return JsonResponse({'status': False, 'message': 'No file uploaded'})
+        
+        sheet_name = request.POST.get('sheetname')
+        if not sheet_name:
+            return JsonResponse({'status': False, 'message': 'No sheet name selected'})
+        
+        file_extension = os.path.splitext(file.name)[1].lower()
+        if file_extension not in ['.xlsx', '.csv']:
+            return JsonResponse({'status': False, 'message': 'Invalid file type. Only .xlsx and .csv are supported'})
+        
+        with tempfile.NamedTemporaryFile(suffix=file_extension, delete=False) as temp_file:
+            for chunk in file.chunks():
+                temp_file.write(chunk)
+            temp_file_path = temp_file.name
+        
+        try:   
+            status, message = import_file_to_google_sheets(
+                file_path=temp_file_path,
+                spreadsheet_name=sheet_name,
+                expected_columns=["Name", "Last Payment Date", "Last Payment Amount", "Email", "Telephone 1"],
+                sheet_name=sheet_name
+            )
+            
+            os.unlink(temp_file_path)
+            
+            return JsonResponse({'status': status, 'message': message})
+            
+        except Exception as e:
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+            return JsonResponse({'status': False, 'message': f'Error: {str(e)}'})
+    
+    return JsonResponse({'status': status, 'message': message})
 
 def run_task(request, task_name):
     if request.method == "POST":
