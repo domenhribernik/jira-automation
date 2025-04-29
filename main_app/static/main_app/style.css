@@ -44,7 +44,9 @@ button.deactivate:hover {
     background: #c82333;
 }
 
-.taskContainer, .scheduleContainer, .dataImport {
+.taskContainer,
+.scheduleContainer,
+.dataImport {
     max-width: 80%;
     margin: 50px auto;
     background: white;
@@ -75,7 +77,8 @@ button.deactivate:hover {
     padding: 0 5px;
 }
 
-.intervalInput span, .intervalInput input {
+.intervalInput span,
+.intervalInput input {
     display: inline-block;
 }
 
@@ -141,6 +144,8 @@ button.deactivate:hover {
     margin: 0px auto;
     font-family: monospace;
     font-size: 1rem;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
 }
 
 /*? Sub Task Item */
@@ -161,16 +166,11 @@ button.deactivate:hover {
     margin-bottom: 20px;
 }
 
-.dataImport .form-group > label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 8px;
-}
-
-
 .dataImport input[type="file"] {
-    width: 95%;
-    padding: 8px;
+    display: inline-block;
+    box-sizing: border-box;
+    width: calc(100% - 60px);
+    padding: 12px 8px;
     border: 1px solid #ccc;
     border-radius: 6px;
     background-color: #fafafa;
@@ -179,13 +179,17 @@ button.deactivate:hover {
 }
 
 .sheetname {
-    margin-top: 20px;
+    border: 1px solid #ccc;
+    border-radius: 15px;
+    padding: 20px;
+    margin: 0 30px;
 }
 
 .radio-options {
     display: flex;
     gap: 20px;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 .radio-item {
@@ -211,6 +215,16 @@ button.deactivate:hover {
     height: 18px;
 }
 
+.radio-item:has(input[type="radio"]:checked) {
+    background-color: #dbeafe;
+    border-color: #2563eb;
+}
+
+#importButton {
+    display: inline-block;
+    box-sizing: border-box;
+    width: calc(100% - 60px);
+}
 
 /*? Task Buttons */
 #response {
@@ -235,8 +249,10 @@ button.deactivate:hover {
         margin: 0;
     }
 
-   
-    .taskContainer, .scheduleContainer, .dataImport {
+
+    .taskContainer,
+    .scheduleContainer,
+    .dataImport {
         max-width: 90vw;
         margin: 30px auto;
     }
@@ -279,7 +295,8 @@ button.deactivate:hover {
     }
 
     .taskContainer,
-    .scheduleContainer, .dataImport {
+    .scheduleContainer,
+    .dataImport {
         max-width: 90%;
         margin: 30px 5px;
     }

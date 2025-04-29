@@ -28,11 +28,9 @@
                     {% csrf_token %}
 
                     <div class="form-group">
-                        <label for="file">Select File (Excel or CSV):</label>
                         <input type="file" name="file" id="file" accept=".xlsx,.csv" required>
                     </div>
                     <div class="form-group sheetname">
-                        <h3>Sheet Name:</h3>
                         <div class="radio-options">
                             <div class="radio-item">
                                 <input type="radio" name="sheetname" id="Lapsed" value="Lapsed" checked>
@@ -60,7 +58,7 @@
             <div class="taskContainer">
                 <h1>Run Task</h1>
                 <button class="activate" onclick="triggerTask('import_lapsed_clients')">Import Lapsed Clients</button>
-                <button class="activate" onclick="triggerTask('check_for_new_orders')">Check New Orders</button>
+                <button class="activate" onclick="triggerTask('check_for_new_orders')">Import New Web Orders</button>
                 <button class="activate" onclick="triggerTask('schedule_emails')">Schedule Emails</button>
                 <button class="activate" onclick="triggerTask('print_task_list')">Print Task List</button>
                 <button class="activate" onclick="window.open('/logs/', '_blank')">Open Full Log</button>

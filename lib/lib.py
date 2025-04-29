@@ -26,7 +26,8 @@ JIRA_URL = os.getenv("JIRA_URL")
 JIRA_EMAIL = os.getenv("JIRA_EMAIL")
 JIRA_API_TOKEN = os.getenv("JIRA_API_TOKEN")
 JIRA_PROJECT_KEY = os.getenv("JIRA_PROJECT_KEY")
-DEFAULT_ASSIGNED_USER = os.getenv("DEFAULT_ASSIGNED_USER")
+DEFAULT_ASSIGNED_USER_LAPSED = os.getenv("DEFAULT_ASSIGNED_USER_LAPSED")
+DEFAULT_ASSIGNED_USER_NEW_WEB_ORDER = os.getenv("DEFAULT_ASSIGNED_USER_NEW_WEB_ORDER")
 
 TRANSITIONS = {
     "lapsed": 2,
@@ -382,7 +383,7 @@ def filter_jira_issues(df, existing_elements, days):
     
     return pd.DataFrame(filtered)
 
-def create_jira_issues(df):
+def create_jira_issues(df, user_id):
     """Create Jira issues from a DataFrame and return their keys."""
     bulk_issue_data = {"issueUpdates": []}
 
@@ -398,7 +399,7 @@ def create_jira_issues(df):
         issue_payload = {
             "fields": {
                 "issuetype": {"id": 10001}, #? Lead hardcoded
-                "assignee": {"id": DEFAULT_ASSIGNED_USER}, #? webadmin hardcoded
+                "assignee": {"id": user_id},
                 "project": {"key": JIRA_PROJECT_KEY},
                 "summary": str(customer_name),
                 "customfield_10050": str(last_date), 
@@ -701,7 +702,7 @@ def import_lapsed_clients(filename, sheet): #? 1 req per 100 existing (times 3 s
             if total_api_calls % CALLS_BEFORE_BREAK == 0 and total_api_calls != 0:
                 logging.info(f"Rate limiting: Pausing for {PAUSE_DURATION} seconds.")
                 time.sleep(PAUSE_DURATION)
-            new_keys = create_jira_issues(batch)
+            new_keys = create_jira_issues(batch, DEFAULT_ASSIGNED_USER_LAPSED)
             logging.info(new_keys)
             transition_jira_issues("Lapsed", new_keys)
             total_api_calls += 2
@@ -734,7 +735,7 @@ def check_for_new_orders(filename, sheet): #? same as import_lapsed_clients
                 if total_api_calls % CALLS_BEFORE_BREAK == 0 and total_api_calls != 0:
                     logging.info(f"Rate limiting: Pausing for {PAUSE_DURATION} seconds.")
                     time.sleep(PAUSE_DURATION)
-                new_keys = create_jira_issues(batch)
+                new_keys = create_jira_issues(batch, DEFAULT_ASSIGNED_USER_NEW_WEB_ORDER)
                 transition_jira_issues("New Web Order", new_keys)
                 total_api_calls += 2
                 time.sleep(5) #? Rate limit for each call
