@@ -7,4 +7,5 @@ oauth2client
 pandas
 apscheduler
 django
-sqlalchemy
+sqlalchemyopenpyxl
+openpyxl
