@@ -604,7 +604,7 @@ def schedule_emails_list(days_delay, status): #? Max 1000 issues with 200 distin
             message = get_email_message(summary, key)
 
             issues_to_update.append(key)
-            scheduled_emails.append((key, subject, message, email_receiver, send_email_time))
+            scheduled_emails.append((f"{summary} ({key})", subject, message, email_receiver, send_email_time))
 
         except Exception as e:
             logging.error(f"Failed processing issue {key}: {e}")

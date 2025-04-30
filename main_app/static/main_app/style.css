@@ -151,7 +151,7 @@ button.deactivate:hover {
 /*? Sub Task Item */
 .subTaskItem {
     display: grid;
-    grid-template-columns: 2fr 2fr 1fr;
+    grid-template-columns: 5fr 2fr 1fr;
     justify-content: space-evenly;
     align-items: center;
     border: 1px solid #ccc;
@@ -159,6 +159,19 @@ button.deactivate:hover {
     background: #f9f9f9;
     margin: 5px 10px 0;
     padding: 0 25px;
+}
+
+.delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    background: #dc3545;
+    transition: transform 0.3s ease-in-out;
+}
+
+.delete-btn:hover {
+    background: #c82333;
 }
 
 /*? Import data */

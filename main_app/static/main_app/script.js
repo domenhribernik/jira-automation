@@ -158,8 +158,8 @@ function createSubTaskElement(subTaskName, subTaskData, subTaskContainer) {
 
 function deleteSubTaskElement(subTaskName, subTaskContainer) {
     const elementToRemove = subTaskContainer.querySelector(`[data-sub-task-name="${subTaskName}"]`);
-    
-    if (elementToRemove) {
+
+    if (elementToRemove !== null && elementToRemove !== undefined) {
         elementToRemove.remove();
     }
     

@@ -153,6 +153,7 @@
                     if (Object.entries(data).length === 0) return;
                     const fragment = document.createDocumentFragment();
                     Object.entries(data).forEach(([subTaskName, subTaskData]) => {
+                        subTaskName = subTaskName.replace(/^subtask_email_/, '');
                         fragment.appendChild(createSubTaskElement(subTaskName, subTaskData, subTaskContainer));
                     });
                     subTaskContainer.appendChild(fragment);
@@ -202,8 +203,8 @@
                 .then(response => response.json())
                 .then(data => {
                     if (taskName.startsWith("subtask_")) { // Hardcoded parent for deletion process
-                        console.log(data);
                         const subTaskContainer = document.querySelector(`.taskScheduleItem[data-task-name="${ALL_TASKS[2]}"] .subTaskContainer`);
+                        taskName = taskName.replace(/^subtask_email_/, '');
                         deleteSubTaskElement(taskName, subTaskContainer);
                     }
                     else {
