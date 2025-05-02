@@ -2,6 +2,8 @@ from apscheduler.triggers.interval import IntervalTrigger
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from apscheduler.jobstores.base import JobLookupError
 import tempfile
 from lib.lib import *
 
@@ -189,6 +191,30 @@ def schedule_task(request, task_name):
         })
     return JsonResponse({"message": "Invalid request"}, status=400)
 
+@csrf_exempt
+@require_POST
+def send_email_early(request, sub_task_name):
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request method"}, status=405)
+    
+    job_id = "subtask_email_" + sub_task_name
+    if not job_id:
+        return JsonResponse({"error": "Missing issue_key"}, status=400)
+
+    try:
+        job = scheduler.get_job(job_id)
+
+        if not job:
+            return JsonResponse({"error": f"No job found with ID {job_id}"}, status=404)
+
+        send_email(*job.args)
+        scheduler.remove_job(job.id)
+        logging.info(f"Email job for {job_id} triggered early.")
+        return JsonResponse({"status": "success", "message": f"Email job for {job_id} triggered early."})
+    except JobLookupError:
+        return JsonResponse({"error": "Job not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 def delete_scheduled_task(request, task_name):
     if request.method == "POST":

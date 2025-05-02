@@ -188,24 +188,26 @@ function createSubTaskElement(subTaskName, subTaskData, subTaskContainer) {
     subTaskItem.classList.add("subTaskItem");
     subTaskItem.setAttribute("data-sub-task-name", subTaskName);
 
-    // Sub-task name label
     const label = document.createElement("label");
     label.innerText = subTaskName.replace(/^email_/, "");
 
-    // Countdown timer span
     const countdownSpan = document.createElement("span");
     countdownSpan.classList.add("countdown");
     countdownToDate(subTaskName, subTaskData, countdownSpan);
 
-    // Delete button
+    const sendEmailButton = document.createElement("button");
+    sendEmailButton.classList.add("send-email-btn");
+    sendEmailButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
+    sendEmailButton.onclick = () => sendEmailEarly(subTaskName);
+
     const deleteButton = document.createElement("button");
     deleteButton.classList.add("delete-btn");
-    deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>'; // FontAwesome trash icon
+    deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
     deleteButton.onclick = () => deleteScheduledTask(subTaskData.id);
 
-    // Append elements
     subTaskItem.appendChild(label);
     subTaskItem.appendChild(countdownSpan);
+    subTaskItem.appendChild(sendEmailButton);
     subTaskItem.appendChild(deleteButton);
 
     return subTaskItem;

@@ -32,9 +32,9 @@
                                 <option value="minutes">Minutes</option>
                                 <option value="seconds">Seconds</option>
                             </select>
-                            <input type="number" min="1" value="1" id="intervalValue" class="intervalValue"  />
+                            <input type="number" min="1" value="1" id="intervalValue" class="intervalValue" />
                         </div>
-                        
+
                         <div class="input-group">
                             <label class="input-label">Initial delay:</label>
                             <select id="delayUnit" disabled>
@@ -230,6 +230,22 @@
                     getSubTasks(name, 'subtask')
                 })
                 .catch(error => console.error(error));
+        }
+
+        function sendEmailEarly(subTaskName) {
+            fetch(`/send-email-early/${subTaskName}/`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}"
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    const subTaskContainer = document.querySelector(`.taskScheduleItem[data-task-name="${ALL_TASKS[2]}"] .subTaskContainer`);
+                    deleteSubTaskElement(subTaskName, subTaskContainer);
+                    updateTaskList(taskName, data);
+                })
+                .catch(err => alert("Failed: " + err));
         }
 
         function deleteScheduledTask(taskName) {

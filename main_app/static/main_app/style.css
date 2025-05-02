@@ -210,7 +210,7 @@ select:disabled, input[type="number"]:disabled {
     grid-column: 1 / -1;
     padding: 10px;
     background: #f9f9f9;
-    border-radius: 5px;
+    border-radius: 15px;
     margin-top: 5px;
 }
 
@@ -234,11 +234,11 @@ select:disabled, input[type="number"]:disabled {
 /*? Sub Task Item */
 .subTaskItem {
     display: grid;
-    grid-template-columns: 5fr 2fr 1fr;
+    grid-template-columns: 5fr 2fr 1fr 1fr;
     justify-content: space-evenly;
     align-items: center;
     border: 1px solid #ccc;
-    border-radius: 5px;
+    border-radius: 10px;
     background: #f9f9f9;
     margin: 5px 10px 0;
     padding: 0 25px;

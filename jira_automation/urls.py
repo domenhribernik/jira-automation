@@ -27,5 +27,6 @@ urlpatterns = [
     path('get-sub-tasks/<str:category>/', views.get_sub_tasks, name='get_sub_tasks'),
     path('run-task/<str:task_name>/', views.run_task, name='run_task'),
     path('schedule-task/<str:task_name>/', views.schedule_task, name='schedule_task'),
+    path('send-email-early/<str:sub_task_name>/', views.send_email_early, name='send_email_early'),
     path('delete-scheduled-task/<str:task_name>/', views.delete_scheduled_task, name='delete_scheduled_task'),
 ]
