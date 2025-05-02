@@ -135,9 +135,17 @@ def schedule_task(request, task_name):
             data = json.loads(request.body)
             value = int(data.get('interval_value'))
             unit = data.get('interval_unit')
+            seconds = data.get('seconds_delay', None)
             interval_args = {unit: value}
         except json.JSONDecodeError:
             return JsonResponse({"message": "Invalid JSON"}, status=400)
+
+        logging.info(seconds)
+        kwargs = {}
+        if seconds is not None:
+            kwargs['next_run_time'] = datetime.now() + timedelta(seconds=int(seconds))
+
+        logging.info(kwargs)
 
         if task_name == "import_lapsed_clients":
             job = scheduler.add_job(
@@ -146,7 +154,8 @@ def schedule_task(request, task_name):
                  **interval_args,
                 args=["Lapsed", "Lapsed"],
                 id=f"job_{task_name}",
-                replace_existing=True
+                replace_existing=True,
+                **kwargs
             )
         elif task_name == "check_for_new_orders":
             job = scheduler.add_job(
@@ -155,7 +164,8 @@ def schedule_task(request, task_name):
                  **interval_args,
                 args=["New Web Orders", "New Web Orders"],
                 id=f"job_{task_name}",
-                replace_existing=True
+                replace_existing=True,
+                **kwargs
             )
         elif task_name == "schedule_emails":
             job = scheduler.add_job(
@@ -164,7 +174,8 @@ def schedule_task(request, task_name):
                  **interval_args,
                 args=[3, "In Progress"], #? 3 days delay
                 id=f"job_{task_name}",
-                replace_existing=True
+                replace_existing=True,
+                **kwargs
             )
         else:
             return JsonResponse({"message": "Invalid task name"}, status=400)

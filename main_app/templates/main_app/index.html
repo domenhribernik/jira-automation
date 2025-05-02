@@ -16,6 +16,37 @@
         <div>
             <div class="scheduleContainer">
                 <h1>Schedule Tasks</h1>
+                <div class="delay-options">
+                    <div class="delay-options-title">
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="enableDelay" class="delay-checkbox">
+                            <label for="enableDelay" class="delay-label">Add Initial Delay</label>
+                        </div>
+                    </div>
+                    <div class="delay-inputs">
+                        <div class="input-group">
+                            <label class="input-label">Run interval:</label>
+                            <select id="intervalUnit">
+                                <option value="days">Days</option>
+                                <option value="hours">Hours</option>
+                                <option value="minutes">Minutes</option>
+                                <option value="seconds">Seconds</option>
+                            </select>
+                            <input type="number" min="1" value="1" id="intervalValue" class="intervalValue"  />
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label">Initial delay:</label>
+                            <select id="delayUnit" disabled>
+                                <option value="seconds">Seconds</option>
+                                <option value="minutes">Minutes</option>
+                                <option value="hours">Hours</option>
+                                <option value="days">Days</option>
+                            </select>
+                            <input type="number" min="0" value="1" id="delayValue" disabled />
+                        </div>
+                    </div>
+                </div>
                 <div id="taskSchedule">
                 </div>
             </div>
@@ -178,13 +209,19 @@
         }
 
         function scheduleTask(taskName) {
-            const value = document.querySelector(`.taskScheduleItem[data-task-name="${taskName}"] .intervalValue`).value;
-            const unit = document.querySelector(`.taskScheduleItem[data-task-name="${taskName}"] #intervalUnit`).value;
+            const value = document.getElementById("intervalValue").value;
+            const unit = document.getElementById("intervalUnit").value;
+            const delayEnabled = document.getElementById("enableDelay").checked;
+            const delayUnit = document.getElementById("delayUnit").value;
+            const delayValue = document.getElementById("delayValue").value;
+
+            const secondsDelay = delayEnabled ? convertToSeconds(delayValue, delayUnit) : null;
+            console.log(secondsDelay);
 
             fetch(`/schedule-task/${taskName}/`, {
                 method: "POST",
                 headers: { "X-CSRFToken": "{{ csrf_token }}" },
-                body: JSON.stringify({ interval_value: value, interval_unit: unit })
+                body: JSON.stringify({ interval_value: value, interval_unit: unit, seconds_delay: secondsDelay })
             })
                 .then(response => response.json())
                 .then(data => {
