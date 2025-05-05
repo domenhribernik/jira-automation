@@ -152,26 +152,9 @@
             fetch("/get-scheduled-tasks/")
                 .then(response => response.json())
                 .then(data => {
-                    const taskContainer = document.getElementById("taskSchedule");
-                    taskContainer.innerHTML = "";
-
-                    ALL_TASKS.forEach(taskName => {
-                        const taskData = data[`job_${taskName}`] || { status: false, next_run: "Not scheduled" };
-                        taskContainer.appendChild(createTaskElement(taskName, taskData));
-                    });
-
+                    loadTasks(data);
                     getSubTasks('schedule_emails', "subtask");
-
-                    const logContainer = document.getElementById("taskList");
-                    logContainer.innerHTML = "";
-
-                    Object.entries(data).forEach(([taskId, taskData]) => {   // TODO Write a new get function in the middleware, where you can get the full task list. This should be handled by the backend. 
-                        const entryDiv = document.createElement("div");
-                        entryDiv.id = taskId;
-                        entryDiv.classList.add("log-entry");
-                        entryDiv.innerHTML = `<strong>${taskData.name}:</strong> ${JSON.stringify(taskData)}`;
-                        logContainer.appendChild(entryDiv);
-                    });
+                    loadTaskList(data);
                 })
                 .catch(error => console.error("Error fetching task statuses:", error));
         }
@@ -180,11 +163,13 @@
             fetch(`/get-sub-tasks/${category}/`)
                 .then(response => response.json())
                 .then(data => {
+                    console.log("task added to list: ", taskName);
+                    
                     const subTaskContainer = document.querySelector(`.taskScheduleItem[data-task-name="${taskName}"] .subTaskContainer`);
                     if (Object.entries(data).length === 0) return;
                     const fragment = document.createDocumentFragment();
                     Object.entries(data).forEach(([subTaskName, subTaskData]) => {
-                        subTaskName = subTaskName.replace(/^subtask_email_/, '');
+                        console.log(subTaskName, subTaskData);
                         fragment.appendChild(createSubTaskElement(subTaskName, subTaskData, subTaskContainer));
                     });
                     subTaskContainer.appendChild(fragment);
@@ -216,7 +201,6 @@
             const delayValue = document.getElementById("delayValue").value;
 
             const secondsDelay = delayEnabled ? convertToSeconds(delayValue, delayUnit) : null;
-            console.log(secondsDelay);
 
             fetch(`/schedule-task/${taskName}/`, {
                 method: "POST",
@@ -232,20 +216,34 @@
                 .catch(error => console.error(error));
         }
 
-        function sendEmailEarly(subTaskName) { // Needs to be tested
-            fetch(`/send-email-early/${subTaskName}/`, {
+        function sendEmailEarly(subTaskName, subTaskData) { // Needs to be tested
+            fetch('/send-email-early/', {
                 method: "POST",
                 headers: {
+                    "Content-Type": "application/json",
                     "X-CSRFToken": "{{ csrf_token }}"
-                }
+                },
+                body: JSON.stringify({
+                    sub_task_name: subTaskName
+                })
             })
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) {
+                        return res.text().then(text => {
+                            throw new Error(`Server responded with status ${res.status}: ${text}`);
+                        });
+                    }
+                    return res.json();
+                })
                 .then(data => {
+                    console.log(data);
                     const subTaskContainer = document.querySelector(`.taskScheduleItem[data-task-name="${ALL_TASKS[2]}"] .subTaskContainer`);
                     deleteSubTaskElement(subTaskName, subTaskContainer);
-                    updateTaskList(subTaskName, data);
                 })
-                .catch(err => alert("Failed: " + err));
+                .catch(err => {
+                    console.error("Error:", err);
+                    alert("Failed: " + err);
+                });
         }
 
         function deleteScheduledTask(taskName) {
@@ -255,9 +253,10 @@
             })
                 .then(response => response.json())
                 .then(data => {
+                    console.log(taskName, data);
+                    
                     if (taskName.startsWith("subtask_")) { // Hardcoded parent for deletion process
                         const subTaskContainer = document.querySelector(`.taskScheduleItem[data-task-name="${ALL_TASKS[2]}"] .subTaskContainer`);
-                        taskName = taskName.replace(/^subtask_email_/, '');
                         deleteSubTaskElement(taskName, subTaskContainer);
                     }
                     else {

@@ -113,7 +113,7 @@ def get_scheduled_tasks(request):
     return JsonResponse(task_status)
 
 
-def get_sub_tasks(request, category): #TODO if app reboots the scheduled emails are lost
+def get_sub_tasks(request, category):
     if request.method == "GET":
         jobs = scheduler.get_jobs()
         task_list = {} 
@@ -193,15 +193,18 @@ def schedule_task(request, task_name):
 
 @csrf_exempt
 @require_POST
-def send_email_early(request, sub_task_name):
+def send_email_early(request):
     if request.method != "POST":
         return JsonResponse({"error": "Invalid request method"}, status=405)
-    
-    job_id = "subtask_email_" + sub_task_name
-    if not job_id:
-        return JsonResponse({"error": "Missing issue_key"}, status=400)
 
     try:
+        data = json.loads(request.body)
+        sub_task_name = data.get('sub_task_name')
+
+        if not sub_task_name:
+            return JsonResponse({"error": "Missing sub_task_name"}, status=400)
+
+        job_id = sub_task_name
         job = scheduler.get_job(job_id)
 
         if not job:

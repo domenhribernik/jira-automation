@@ -79,6 +79,29 @@ function toggleSubTasks(expandButton, subTaskContainer) {
     subTaskContainer.classList.contains("visible") ? expandButton.innerHTML = '<i class="fas fa-chevron-up"></i>' : expandButton.innerHTML = '<i class="fas fa-chevron-down"></i>';
 }
 
+function loadTasks(data) {
+    const taskContainer = document.getElementById("taskSchedule");
+    taskContainer.innerHTML = "";
+
+    ALL_TASKS.forEach(taskName => {
+        const taskData = data[`job_${taskName}`] || { status: false, next_run: "Not scheduled" };
+        taskContainer.appendChild(createTaskElement(taskName, taskData));
+    });
+}
+
+function loadTaskList(data) {
+    const logContainer = document.getElementById("taskList");
+    logContainer.innerHTML = "";
+
+    Object.entries(data).forEach(([taskId, taskData]) => {
+        const entryDiv = document.createElement("div");
+        entryDiv.id = taskId;
+        entryDiv.classList.add("log-entry");
+        entryDiv.innerHTML = `<strong>${taskData.name}:</strong> ${JSON.stringify(taskData)}`;
+        logContainer.appendChild(entryDiv);
+    });
+}
+
 function updateTaskList(taskName, taskData) {
     const logContainer = document.getElementById("taskList");
     if (taskData.status) {
@@ -189,7 +212,7 @@ function createSubTaskElement(subTaskName, subTaskData, subTaskContainer) {
     subTaskItem.setAttribute("data-sub-task-name", subTaskName);
 
     const label = document.createElement("label");
-    label.innerText = subTaskName.replace(/^email_/, "");
+    label.innerText = subTaskName.replace(/^subtask_email_/, '')
 
     const countdownSpan = document.createElement("span");
     countdownSpan.classList.add("countdown");
@@ -198,7 +221,10 @@ function createSubTaskElement(subTaskName, subTaskData, subTaskContainer) {
     const sendEmailButton = document.createElement("button");
     sendEmailButton.classList.add("send-email-btn");
     sendEmailButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
-    sendEmailButton.onclick = () => sendEmailEarly(subTaskName);
+    sendEmailButton.onclick = () => {
+        sendEmailButton.disabled = true;
+        sendEmailEarly(subTaskName, subTaskData);
+    }
 
     const deleteButton = document.createElement("button");
     deleteButton.classList.add("delete-btn");
