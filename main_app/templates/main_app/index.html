@@ -50,6 +50,7 @@
                 <div id="taskSchedule">
                 </div>
             </div>
+            <button id="process-button">Send test email to webadmin</button>
             <div id="taskList"></div>
         </div>
         <div>
@@ -100,6 +101,55 @@
     <script src="{% static 'main_app/script.js' %}"></script>
     <!-- TODO Move js out of main page -->
     <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken');
+
+        document.getElementById('process-button').addEventListener('click', function() {
+            
+            const data = {
+                value: parseInt("test", 10)
+            };
+            console.log('Sending data to server:', data);
+            fetch('/test-send-email/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Received response from server:', data);
+                
+                if (data.status === 'success') {
+                    resultDiv.innerHTML = `<p>Success: ${data.message}</p>
+                                          <p>Result: ${data.result}</p>`;
+                    resultDiv.style.backgroundColor = '#e8f5e9';
+                } else {
+                    resultDiv.innerHTML = `<p>Error: ${data.message}</p>`;
+                    resultDiv.style.backgroundColor = '#ffebee';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+
         document.addEventListener("DOMContentLoaded", function () {
             const importForm = document.getElementById('importForm');
             const importResult = document.getElementById('importResult');
@@ -118,6 +168,9 @@
 
                 fetch('/import-data/', {
                     method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
                     body: formData
                 })
                     .then(response => response.json())
@@ -181,7 +234,7 @@
         function triggerTask(taskName) {
             fetch(`/run-task/${taskName}/`, {
                 method: "POST",
-                headers: { "X-CSRFToken": "{{ csrf_token }}" }
+                headers: { "X-CSRFToken": csrftoken }
             })
                 .then(response => response.json())
                 .then(data => {
@@ -204,7 +257,7 @@
 
             fetch(`/schedule-task/${taskName}/`, {
                 method: "POST",
-                headers: { "X-CSRFToken": "{{ csrf_token }}" },
+                headers: { "X-CSRFToken": csrftoken },
                 body: JSON.stringify({ interval_value: value, interval_unit: unit, seconds_delay: secondsDelay })
             })
                 .then(response => response.json())
@@ -221,7 +274,7 @@
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "X-CSRFToken": "{{ csrf_token }}"
+                    "X-CSRFToken": csrftoken
                 },
                 body: JSON.stringify({
                     sub_task_name: subTaskName
@@ -249,7 +302,7 @@
         function deleteScheduledTask(taskName) {
             fetch(`/delete-scheduled-task/${taskName}/`, {
                 method: "POST",
-                headers: { "X-CSRFToken": "{{ csrf_token }}" }
+                headers: { "X-CSRFToken": csrftoken }
             })
                 .then(response => response.json())
                 .then(data => {

@@ -13,7 +13,31 @@ NEWLY_SCHEDULED_TASKS = []
 def home(request):
     return render(request, 'main_app/index.html')
 
-@csrf_exempt
+def test_send_email(request):
+    if request.method == 'POST':
+        try:
+
+            data = json.loads(request.body)
+            
+            logging.info(f"Received data: {data}")
+
+            result = send_email("test email", "message", "webadmin@cwcyprus.com")
+            return JsonResponse({
+                'status': 'success',
+                'result': result,
+                'message': 'Data processed successfully!',
+            })
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=400)
+    
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Only POST requests are allowed.'
+    }, status=405)
+
 def import_data(request):
     if request.method == 'POST':
         file = request.FILES.get('file')
@@ -191,7 +215,6 @@ def schedule_task(request, task_name):
         })
     return JsonResponse({"message": "Invalid request"}, status=400)
 
-@csrf_exempt
 @require_POST
 def send_email_early(request):
     if request.method != "POST":

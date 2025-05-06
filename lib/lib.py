@@ -471,8 +471,10 @@ def send_email(subject, message, email_receiver):
             server.login(EMAIL_SENDER, EMAIL_PASSWORD)
             server.sendmail(EMAIL_SENDER, email_receiver, msg.as_string())
             logging.info("Email sent successfully!")
+            return "Email sent successfully!"
     except Exception as e:
         logging.error(f"Failed to send email: {e}")
+        return f"Failed to send email: {e}"
 
 def send_email_jira(key, message): #TODO Jira supports sending emails, can't get it to work for now
     payload = {
