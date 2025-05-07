@@ -121,7 +121,7 @@
         document.getElementById('process-button').addEventListener('click', function() {
             
             const data = {
-                value: parseInt("test", 10)
+                value: 42
             };
             console.log('Sending data to server:', data);
             fetch('/test-send-email/', {
@@ -133,17 +133,8 @@
                 body: JSON.stringify(data)
             })
             .then(response => response.json())
-            .then(data => {
+            .then(data => { 
                 console.log('Received response from server:', data);
-                
-                if (data.status === 'success') {
-                    resultDiv.innerHTML = `<p>Success: ${data.message}</p>
-                                          <p>Result: ${data.result}</p>`;
-                    resultDiv.style.backgroundColor = '#e8f5e9';
-                } else {
-                    resultDiv.innerHTML = `<p>Error: ${data.message}</p>`;
-                    resultDiv.style.backgroundColor = '#ffebee';
-                }
             })
             .catch(error => {
                 console.error('Error:', error);

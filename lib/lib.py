@@ -18,6 +18,11 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import pandas as pd
 import numpy as np
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import socket
+import ssl
 from lib.scheduler import scheduler
 
 load_dotenv(dotenv_path=Path(".env"))
@@ -464,17 +469,64 @@ def send_email(subject, message, email_receiver):
     msg["To"] = email_receiver
     msg["Subject"] = subject
     msg.attach(MIMEText(message, "html"))
+    
+    logging.info(f"Attempting to send email to {email_receiver}")
 
     try:
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()  # Secure the connection
-            server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-            server.sendmail(EMAIL_SENDER, email_receiver, msg.as_string())
-            logging.info("Email sent successfully!")
-            return "Email sent successfully!"
+        context = ssl.create_default_context()
+        
+        logging.info(f"Connecting to {SMTP_SERVER}:{SMTP_PORT}...")
+        
+        try:
+            server = smtplib.SMTP_SSL(SMTP_SERVER, 465, timeout=30, context=context)
+            logging.info("Connected using SMTP_SSL")
+        except (socket.error, smtplib.SMTPException) as e:
+            logging.info(f"SMTP_SSL failed: {e}, trying SMTP with STARTTLS")
+            server = smtplib.SMTP(SMTP_SERVER, 587, timeout=30)
+            server.ehlo()
+            server.starttls(context=context)
+            server.ehlo()
+            logging.info("Connected using STARTTLS")
+        
+        logging.info("Logging in...")
+        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+        
+        logging.info("Sending email...")
+        server.sendmail(EMAIL_SENDER, email_receiver, msg.as_string())
+        
+        logging.info("Email sent successfully!")
+        server.quit()
+        return "Email sent successfully!"
+        
+    except smtplib.SMTPAuthenticationError as e:
+        error_msg = f"Gmail authentication failed: {e}. Check your credentials and make sure you're using an App Password if 2FA is enabled."
+        logging.error(error_msg)
+        return error_msg
+        
+    except socket.gaierror as e:
+        error_msg = f"DNS lookup failed for {SMTP_SERVER}: {e}"
+        logging.error(error_msg)
+        return error_msg
+        
+    except socket.timeout as e:
+        error_msg = f"Connection to {SMTP_SERVER} timed out: {e}"
+        logging.error(error_msg)
+        return error_msg
+        
+    except ConnectionRefusedError as e:
+        error_msg = f"Connection refused to {SMTP_SERVER}:{SMTP_PORT}: {e}"
+        logging.error(error_msg)
+        return error_msg
+        
+    except OSError as e:
+        error_msg = f"Network error when connecting to {SMTP_SERVER}:{SMTP_PORT}: {e}"
+        logging.error(error_msg)
+        return error_msg
+        
     except Exception as e:
-        logging.error(f"Failed to send email: {e}")
-        return f"Failed to send email: {e}"
+        error_msg = f"Failed to send email: {e.__class__.__name__}: {e}"
+        logging.error(error_msg)
+        return error_msg
 
 def send_email_jira(key, message): #TODO Jira supports sending emails, can't get it to work for now
     payload = {
