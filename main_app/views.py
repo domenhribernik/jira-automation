@@ -84,8 +84,6 @@ def run_task(request, task_name):
             check_for_new_orders("New Web Orders", "New Web Orders")
         elif task_name == "schedule_emails":
             schedule_emails(3, "In Progress")  # 3 days delay
-        elif task_name == "print_task_list":
-            print_task_list()
         else:
             return JsonResponse({"message": "Invalid task name"}, status=400)
 

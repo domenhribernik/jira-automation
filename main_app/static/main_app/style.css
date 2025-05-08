@@ -323,21 +323,6 @@ select:disabled, input[type="number"]:disabled {
 }
 
 /*? Task Buttons */
-#response {
-    max-width: 600px;
-    max-height: 45vh;
-    overflow-y: scroll;
-    margin: 0 auto;
-}
-
-#response div {
-    font-family: monospace;
-    white-space: pre-wrap;
-    margin: 5px 0;
-    padding: 5px;
-    background-color: #f4f4f4;
-    border: 1px solid #ccc;
-}
 
 @media (max-width: 1100px) {
     .container {

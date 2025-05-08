@@ -462,14 +462,31 @@ def transition_jira_issues(transition, keys): #? Max 1000 transitions
     except requests.exceptions.RequestException as e:
         logging.error(f"Failed to transition issue: {response.text} status: {response.status_code} error: {e}")
 
-def send_email(subject, message, email_receiver):
+def get_issue_status(key):
+    """Get the status of a Jira issue."""
+    response = requests.get(f"{JIRA_URL}/rest/api/3/issue/{key}", headers=HEADERS)
+
+    if response.ok:
+        issue_data = response.json()
+        status = issue_data["fields"]["status"]["name"]
+        return status
+    else:
+        logging.error(f"Failed to get issue status: {response.text} status: {response.status_code}")
+        return None
+
+def send_email(subject, message, email_receiver, key):
     """Send an email with the given subject and message to the email receiver."""
+
+    status = get_issue_status(key)
+    logging.info(f"Email status is {status}")
+    if status != "In Progress":
+        return None
+
     msg = MIMEMultipart()
     msg["From"] = EMAIL_SENDER
     msg["To"] = email_receiver
     msg["Subject"] = subject
-    msg.attach(MIMEText(message, "html"))
-
+    msg.attach(MIMEText(message, "html")) 
     try:
         context = ssl.create_default_context()
         
@@ -489,12 +506,10 @@ def send_email(subject, message, email_receiver):
         
         logging.info("Email sent successfully!")
         server.quit()
-        return "Email sent successfully!"
         
     except Exception as e:
         error_msg = f"Failed to send email: {e.__class__.__name__}: {e}"
         logging.error(error_msg)
-        return error_msg
 
 def send_email_jira(key, message): #TODO Jira supports sending emails, can't get it to work for now
     payload = {
@@ -626,7 +641,7 @@ def schedule_emails_list(days_delay, status): #? Max 1000 issues with 200 distin
             message = get_email_message(summary, key)
 
             issues_to_update.append(key)
-            scheduled_emails.append((f"{summary} ({key})", subject, message, email_receiver, send_email_time))
+            scheduled_emails.append((key, summary, subject, message, email_receiver, send_email_time))
 
         except Exception as e:
             logging.error(f"Failed processing issue {key}: {e}")
@@ -676,25 +691,26 @@ def schedule_emails(days_delay, status): #? 1 req per 100 existing + 3 requests 
     except Exception as e:
         logging.error(f"Failed to retrieve emails to send: {e}")
         return
-    for issue_key, subject, message, email_receiver, send_email_delay in emails_to_send:
+    for issue_key, issue_summary, subject, message, email_receiver, send_email_delay in emails_to_send:
         try:
+            email_summary = f"{issue_summary} ({issue_key})"
             run_date = datetime.now() + timedelta(seconds=send_email_delay)
             logging.info(f"Email delay is {send_email_delay} seconds.")
             logging.info(f"Email will be sent on {run_date}")
             if email_receiver is None:
-                logging.warning(f"Email for issue {issue_key} has no receiver (label was still added).")
+                logging.warning(f"Email for issue {email_summary} has no receiver (label was still added).")
                 continue
             scheduler.add_job(
                 send_email,
                 'date',
                 run_date=run_date,
-                args=[subject, message, email_receiver],
-                id=f"subtask_email_{issue_key}",
+                args=[subject, message, email_receiver, issue_key],
+                id=f"subtask_email_{email_summary}",
                 replace_existing=True
             )
-            print(f"✉️  Email scheduled for issue {issue_key} for {email_receiver} in {send_email_delay} seconds.")
+            print(f"✉️  Email scheduled for issue {email_summary} for {email_receiver} in {send_email_delay} seconds.")
         except Exception as e:
-            logging.error(f"Failed to schedule email for issue {issue_key}: {e}")
+            logging.error(f"Failed to schedule email for issue {email_summary}: {e}")
             continue
 
 def import_lapsed_clients(filename, sheet): #? 1 req per 100 existing (times 3 status), 2 req per 50 inserted, every 20 req 60 sec rate limiting, checks lapsed, in progress, and outcome
