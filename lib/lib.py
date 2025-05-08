@@ -469,13 +469,9 @@ def send_email(subject, message, email_receiver):
     msg["To"] = email_receiver
     msg["Subject"] = subject
     msg.attach(MIMEText(message, "html"))
-    
-    logging.info(f"Attempting to send email to {email_receiver}")
 
     try:
         context = ssl.create_default_context()
-        
-        logging.info(f"Connecting to {SMTP_SERVER}:{SMTP_PORT}...")
         
         try:
             server = smtplib.SMTP_SSL(SMTP_SERVER, 465, timeout=30, context=context)
@@ -488,40 +484,12 @@ def send_email(subject, message, email_receiver):
             server.ehlo()
             logging.info("Connected using STARTTLS")
         
-        logging.info("Logging in...")
         server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-        
-        logging.info("Sending email...")
         server.sendmail(EMAIL_SENDER, email_receiver, msg.as_string())
         
         logging.info("Email sent successfully!")
         server.quit()
         return "Email sent successfully!"
-        
-    except smtplib.SMTPAuthenticationError as e:
-        error_msg = f"Gmail authentication failed: {e}. Check your credentials and make sure you're using an App Password if 2FA is enabled."
-        logging.error(error_msg)
-        return error_msg
-        
-    except socket.gaierror as e:
-        error_msg = f"DNS lookup failed for {SMTP_SERVER}: {e}"
-        logging.error(error_msg)
-        return error_msg
-        
-    except socket.timeout as e:
-        error_msg = f"Connection to {SMTP_SERVER} timed out: {e}"
-        logging.error(error_msg)
-        return error_msg
-        
-    except ConnectionRefusedError as e:
-        error_msg = f"Connection refused to {SMTP_SERVER}:{SMTP_PORT}: {e}"
-        logging.error(error_msg)
-        return error_msg
-        
-    except OSError as e:
-        error_msg = f"Network error when connecting to {SMTP_SERVER}:{SMTP_PORT}: {e}"
-        logging.error(error_msg)
-        return error_msg
         
     except Exception as e:
         error_msg = f"Failed to send email: {e.__class__.__name__}: {e}"

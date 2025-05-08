@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: jira_automation_app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./db.sqlite3:/app/db.sqlite3
+      - ./jobs.sqlite:/app/jobs.sqlite
+      - ./logs:/app/logs
+      - ./credentials.json:/app/credentials.json
+      - ./users.json:/app/users.json
+    env_file:
+      - .env
+    command: >
+      bash -c "python manage.py migrate --noinput &&
+           python manage.py collectstatic --noinput &&
+           gunicorn --workers=3 --bind 0.0.0.0:8000 jira_automation.wsgi:application"
+
+  nginx:
+    image: nginx:1.23-alpine
+    container_name: jira_automation_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./main_app/static:/app/static
+    depends_on:
+      - web

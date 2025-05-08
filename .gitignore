@@ -1,6 +1,4 @@
 credentials.json
-JiraToken.txt
-GmailToken.txt
 users.json
 logs/
 test scripts/
@@ -12,13 +10,13 @@ __pycache__/
 
 # Ignore Django secret key file (if applicable)
 .env
+.env.dev
 *.env
 
 # Ignore database files
 *.db
 *.sqlite
 *.sqlite3
-db.sqlite3
 
 # Ignore virtual environment (if using venv)
 venv/
