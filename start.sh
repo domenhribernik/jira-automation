@@ -19,9 +19,8 @@ if [ ! -f .env ]; then
     exit 1
 fi
     
-    # Start containers in detached mode
-    docker-compose up -d --build
-    
-    echo "Application started in production mode."
-    echo "To view logs, run: docker-compose logs -f"
-fi
+# Start containers in detached mode
+docker compose up -d --build
+
+echo "Application started in production mode."
+echo "To view logs, run: docker-compose logs -f"

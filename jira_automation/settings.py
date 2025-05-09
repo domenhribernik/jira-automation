@@ -25,7 +25,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG")
-ALLOWED_HOSTS = ['autojiratasks.duckdns.org', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['cwjira.duckdns.org', '127.0.0.1', 'localhost', 'web']
 
 # Application definition
 
@@ -47,6 +47,12 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://cwjira.duckdns.org',
+    'https://cwjira.duckdns.org',
+    'http://localhost'
 ]
 
 ROOT_URLCONF = 'jira_automation.urls'
@@ -123,3 +129,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True

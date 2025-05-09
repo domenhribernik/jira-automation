@@ -34,3 +34,9 @@ Thumbs.db
 # Ignore IDE-specific files
 .vscode/
 .idea/
+
+# SSL certificates
+nginx/ssl/*.pem
+
+# HTTP basic auth file
+nginx/auth/.htpasswd
