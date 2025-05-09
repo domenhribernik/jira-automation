@@ -50,7 +50,6 @@
                 <div id="taskSchedule">
                 </div>
             </div>
-            <button id="process-button">Send test email to webadmin</button>
             <div id="taskList"></div>
         </div>
         <div>
@@ -115,29 +114,6 @@
         }
 
         const csrftoken = getCookie('csrftoken');
-
-        document.getElementById('process-button').addEventListener('click', function() {
-            
-            const data = {
-                value: 42
-            };
-            console.log('Sending data to server:', data);
-            fetch('/test-send-email/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(data => { 
-                console.log('Received response from server:', data);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        });
 
         document.addEventListener("DOMContentLoaded", function () {
             const importForm = document.getElementById('importForm');

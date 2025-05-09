@@ -14,13 +14,10 @@ from pathlib import Path
 from io import StringIO
 from oauth2client.service_account import ServiceAccountCredentials
 import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from email.message import EmailMessage
 import pandas as pd
 import numpy as np
 import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import socket
 import ssl
 from lib.scheduler import scheduler
@@ -49,8 +46,6 @@ auth = base64.b64encode(f"{JIRA_EMAIL}:{JIRA_API_TOKEN}".encode()).decode()
 
 GOOGLE_SHEETS_CREDENTIALS_FILE = "credentials.json"
 
-SMTP_SERVER = os.getenv("SMTP_SERVER")
-SMTP_PORT = int(os.getenv("SMTP_PORT"))
 EMAIL_SENDER = os.getenv("EMAIL_SENDER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
@@ -482,34 +477,21 @@ def send_email(subject, message, email_receiver, key):
     if status != "In Progress":
         return None
 
-    msg = MIMEMultipart()
-    msg["From"] = EMAIL_SENDER
-    msg["To"] = email_receiver
-    msg["Subject"] = subject
-    msg.attach(MIMEText(message, "html")) 
+    msg = EmailMessage()
+    msg['From'] = EMAIL_SENDER
+    msg['To'] = email_receiver
+    msg['Subject'] = subject
+    msg.set_content(message)
+    msg.add_alternative(message, subtype='html')
+    
     try:
         context = ssl.create_default_context()
-        
-        try:
-            server = smtplib.SMTP_SSL(SMTP_SERVER, 465, timeout=30, context=context)
-            logging.info("Connected using SMTP_SSL")
-        except (socket.error, smtplib.SMTPException) as e:
-            logging.info(f"SMTP_SSL failed: {e}, trying SMTP with STARTTLS")
-            server = smtplib.SMTP(SMTP_SERVER, 587, timeout=30)
-            server.ehlo()
-            server.starttls(context=context)
-            server.ehlo()
-            logging.info("Connected using STARTTLS")
-        
-        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_SENDER, email_receiver, msg.as_string())
-        
-        logging.info("Email sent successfully!")
-        server.quit()
-        
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context, timeout=30) as smtp:
+            smtp.login(EMAIL_SENDER, EMAIL_PASSWORD)
+            smtp.send_message(msg)
+            logging.info("Email sent successfully!")
     except Exception as e:
-        error_msg = f"Failed to send email: {e.__class__.__name__}: {e}"
-        logging.error(error_msg)
+        logging.error(f"Failed to send email: {e.__class__.__name__}: {e}")
 
 def send_email_jira(key, message): #TODO Jira supports sending emails, can't get it to work for now
     payload = {
