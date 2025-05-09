@@ -24,10 +24,7 @@ COPY . .
 # Create directory for logs if it doesn't exist
 RUN mkdir -p /app/logs
 
-# Scripts don't need to be executable on Windows
-
 # Expose port for the Django app
 EXPOSE 8000
 
-# Command to run the application
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "jira_automation.wsgi:application"]
