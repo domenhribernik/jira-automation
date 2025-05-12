@@ -25,7 +25,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG")
-ALLOWED_HOSTS = ['cwjira.duckdns.org', '127.0.0.1', 'localhost', 'web']
+ALLOWED_HOSTS = ['cwjira.duckdns.org', '127.0.0.1', 'localhost', 'web', '159.69.222.52']
 
 # Application definition
 
