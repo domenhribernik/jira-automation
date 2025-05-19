@@ -213,7 +213,7 @@ def search_issues(status): #? 100 issues per call with paging
     params = {
         "jql": f"project = 'SALES' AND ({status_query})",
         "fields": "id,key,summary",
-        "maxResults": 1000,
+        "maxResults": 1000, 
     }
     issue_ids, issue_keys, issue_names = [], [], []
 
@@ -376,42 +376,61 @@ def filter_jira_issues(df, existing_elements, days):
         if row['Name'] in existing_elements:
             continue
             
-        last_date = datetime.strptime(row['Last Payment Date'], "%d/%m/%Y").date()
-        days_diff = (date.today() - last_date).days
-        if days_diff >= days:
+        if days:
+            last_date = datetime.strptime(row['Last Payment Date'], "%d/%m/%Y").date()
+            days_diff = (date.today() - last_date).days
+            if days_diff >= days:
+                filtered.append(row)
+        else:
             filtered.append(row)
     
     return pd.DataFrame(filtered)
 
-def create_jira_issues(df, user_id):
+def build_lapsed_client_payload(row, user_id):
+    try:
+        last_date = datetime.strptime(row['Last Payment Date'], "%d/%m/%Y").strftime("%Y-%m-%d")
+    except Exception:
+        last_date = None
+
+    return {
+        "fields": {
+            "issuetype": {"id": 10001}, #? Lead hardcoded
+            "assignee": {"id": user_id},
+            "project": {"key": JIRA_PROJECT_KEY},
+            "summary": str(row['Name']),
+            "customfield_10050": str(last_date) if last_date else None,
+            "customfield_10052": str(row['Last Payment Amount']),
+            "customfield_10041": str(row['Name']),  # Company name
+            "customfield_10043": str(row['Name']),
+            "customfield_10042": str(row['Telephone 1']),
+            "customfield_10039": str(row['Email'])
+        }
+    }
+
+def build_new_web_order_payload(row, user_id):
+    return {
+        "fields": {
+            "issuetype": {"id": 10001},
+            "assignee": {"id": user_id},
+            "project": {"key": JIRA_PROJECT_KEY},
+            "summary": str(row['Name']),
+            "customfield_10041": str(row['Company']),
+            "customfield_10043": str(row['Name']),
+            "customfield_10042": str(row['Phone']),
+            "customfield_10039": str(row['Email']),
+            "customfield_10052": str(row['Total']),
+            "customfield_10050": str(row['Date Created'])
+        }
+    }
+
+def create_jira_issues(df, user_id, build_issue_payload):
     """Create Jira issues from a DataFrame and return their keys."""
     bulk_issue_data = {"issueUpdates": []}
 
     for _, row in df.iterrows():
-        last_date = datetime.strptime(row['Last Payment Date'], "%d/%m/%Y").strftime("%Y-%m-%d")
-        days_diff = (date.today() - datetime.strptime(last_date, "%Y-%m-%d").date()).days
-        company_name = row['Name']
-        customer_name = row['Name']
-        last_payment_amount = row['Last Payment Amount']
-        phone = row['Telephone 1']
-        email = row['Email']
-
-        issue_payload = {
-            "fields": {
-                "issuetype": {"id": 10001}, #? Lead hardcoded
-                "assignee": {"id": user_id},
-                "project": {"key": JIRA_PROJECT_KEY},
-                "summary": str(customer_name),
-                "customfield_10050": str(last_date), 
-                "customfield_10052": str(last_payment_amount),
-                "customfield_10041": str(company_name),
-                "customfield_10043": str(customer_name),
-                "customfield_10042": str(phone),
-                "customfield_10039": str(email)
-            }
-        }
-
-        bulk_issue_data["issueUpdates"].append(issue_payload)
+        issue_payload = build_issue_payload(row, user_id)
+        if issue_payload:
+            bulk_issue_data["issueUpdates"].append(issue_payload)
 
     if bulk_issue_data["issueUpdates"] == []:
         return []
@@ -722,7 +741,7 @@ def import_lapsed_clients(filename, sheet): #? 1 req per 100 existing (times 3 s
             if total_api_calls % CALLS_BEFORE_BREAK == 0 and total_api_calls != 0:
                 logging.info(f"Rate limiting: Pausing for {PAUSE_DURATION} seconds.")
                 time.sleep(PAUSE_DURATION)
-            new_keys = create_jira_issues(batch, DEFAULT_ASSIGNED_USER_LAPSED)
+            new_keys = create_jira_issues(batch, DEFAULT_ASSIGNED_USER_LAPSED, build_lapsed_client_payload)
             logging.info(new_keys)
             transition_jira_issues("Lapsed", new_keys)
             total_api_calls += 2
@@ -755,7 +774,7 @@ def check_for_new_orders(filename, sheet): #? same as import_lapsed_clients
                 if total_api_calls % CALLS_BEFORE_BREAK == 0 and total_api_calls != 0:
                     logging.info(f"Rate limiting: Pausing for {PAUSE_DURATION} seconds.")
                     time.sleep(PAUSE_DURATION)
-                new_keys = create_jira_issues(batch, DEFAULT_ASSIGNED_USER_NEW_WEB_ORDER)
+                new_keys = create_jira_issues(batch, DEFAULT_ASSIGNED_USER_NEW_WEB_ORDER, build_new_web_order_payload)
                 transition_jira_issues("New Web Order", new_keys)
                 total_api_calls += 2
                 time.sleep(5) #? Rate limit for each call
